@@ -41,3 +41,18 @@ if (eligibleRevisions is not empty){
 ```
 
 A **succesfulMerge** means there were no conflicts at all.
+
+## Branches configuration
+
+**branches.map** property must be configured in **pom.xml** (it needs a new build) or directly in already generated **config.properties** file (${project.build.outputDirectory}/config.properties).
+
+The value must a comma separated String indicating source branch, target branch, and the Redmine task number where the changes will be committed.
+
+i.e.: VERSION_4_4_0_0,VERSION_4_5_0_0,9999
+
+This means branch name VERSION_4_4_0_0 will be merged into VERSION_4_5_0_0 and the changes will be commited into Redmine task #9999.
+
+If more than one branch need to be added just separate with ";" and insert another entry:
+
+VERSION_4_4_0_0,VERSION_4_5_0_0,9999;VERSION_4_4_0_1,VERSION_4_5_0_0,9999
+
