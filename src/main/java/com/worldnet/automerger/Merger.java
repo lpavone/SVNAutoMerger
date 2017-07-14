@@ -36,10 +36,11 @@ public class Merger {
 
   static final Logger logger = LogManager.getLogger();
 
-  public void performMerge(String sourceBranch, String targetBranch) throws Exception {
-    logger.info("Attempting automatic merge of changes from %s to %s", sourceBranch, targetBranch);
+  public void performMerge(String sourceBranch, String targetBranch,String redmineTaskNumber) throws Exception {
+    logger.info("Attempting automatic merge of changes from {} to {}", sourceBranch, targetBranch);
     String eligibleRevisions = mergeInfoEligibleRevisions( sourceBranch, targetBranch);
     if (StringUtils.isNotBlank( eligibleRevisions)){
+      checkoutOrUpdateTargetBranch(sourceBranch);
       checkoutOrUpdateTargetBranch(targetBranch);
       int fromRevision = getFromRevision(eligibleRevisions);
       int toRevision = getToRevision(eligibleRevisions);
@@ -47,6 +48,7 @@ public class Merger {
       String mergeOutput = merge( sourceBranch, targetBranch, fromRevision, toRevision);
 
       if (isSuccessfulMerge(mergeOutput)){
+        logger.info("Successful merge, changes will be committed in Redmine task #{}", redmineTaskNumber);
         String commitMessageFilePath = PropertiesUtil.getString("tmp.commit.message.file");
         createCommitMessageFile(
             commitMessageFilePath,
@@ -54,29 +56,31 @@ public class Merger {
             targetBranch,
             fromRevision,
             toRevision,
-            "9999");//TODO change this to real redmine issue number);
+            redmineTaskNumber);
 
         String commitOutput = commit( targetBranch, commitMessageFilePath);
 
         if (isSuccessfulCommit(commitOutput)){
-          logger.info("Changes have been successfully committed!");
-          mergeInfoMergedRevisions( sourceBranch, targetBranch);
+          logger.info("Changes have been successfully committed.");
+          logger.info("Logging merged revisions:");
+          String mergedRevisions = mergeInfoMergedRevisions( sourceBranch, targetBranch);
+          Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision, mergedRevisions);
         } else {
           logger.info("Commit was not successful! No changes have been committed into repository");
-          Notifier.sendNotifications(sourceBranch, targetBranch, fromRevision, toRevision);
+          Notifier.notifyCommitFailure(sourceBranch, targetBranch, fromRevision, toRevision);
         }
 
       } else {
-        logger.info("Merge was not successful, changes will not be committed!");
-        Notifier.sendNotifications(sourceBranch, targetBranch, fromRevision, toRevision);
+        logger.info("Conflicts have been found during merge, no changes will be committed.");
+        Notifier.notifyMergeWithConflicts(sourceBranch, targetBranch, fromRevision, toRevision);
       }
       
     } else {
-      logger.info("No eligible revisions to merge from %s to %s, merge aborted.",
+      logger.info("No eligible revisions from {} to {}, merge aborted.",
         sourceBranch,
           targetBranch);
     }
-    logger.info("Finished automatic merge of changes from %s to %s", sourceBranch, targetBranch);
+    logger.info("Finished automatic merge of changes from {} to {}", sourceBranch, targetBranch);
   }
 
   /**

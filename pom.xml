@@ -43,9 +43,13 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <temp.folder>/tmp</temp.folder>
     <tmp.commit.message.file>/tmp/commit_msg</tmp.commit.message.file>
-    <base.repository.path>XXXXXX</base.repository.path>
-    <svn.username>XXXXX</svn.username>
-    <svn.password>XXXXX</svn.password>
+    <base.repository.path>xxxxxx</base.repository.path>
+    <svn.username>xxxxx</svn.username>
+    <svn.password>xxxxx</svn.password>
+    <branches.map>Auto-Merger,Auto-Merger_2,9999;Auto-Merger_2,Auto-Merger_3,5555</branches.map>
+    <email.sender>xxxxxx</email.sender>
+    <email.user></email.user>
+    <email.password></email.password>
   </properties>
 
   <dependencies>
@@ -70,6 +74,28 @@
       <artifactId>junit</artifactId>
       <version>4.12</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.activation</groupId>
+      <artifactId>activation</artifactId>
+      <version>1.1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.mail</groupId>
+      <artifactId>mail</artifactId>
+      <version>1.5.0-b01</version>
+      <scope>runtime</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.mail</groupId>
+      <artifactId>mailapi</artifactId>
+      <version>1.4.3</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.jcabi</groupId>
+      <artifactId>jcabi-email</artifactId>
+      <version>1.10</version>
     </dependency>
   </dependencies>
 </project>

@@ -37,14 +37,14 @@ public class CommandExecutor {
   static String run(String command, String pathName) {
     StringBuilder output = new StringBuilder();
     try {
-      logger.info("$ " + command);
+      logger.info("$ {}", command);
       Process p = Runtime.getRuntime().exec(command, null, new File(pathName));
       BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
       String line;
       while ((line = stdInput.readLine()) != null) {
         output.append(line + "\n");
       }
-      logger.info(output.toString());
+      logger.info("$ {}", output.toString());
 
       return output.toString();
 

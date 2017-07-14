@@ -12,6 +12,7 @@
 package com.worldnet.automerger;
 
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,19 +26,22 @@ public class App
 
     public static void main( String[] args ){
 
-        if (args.length >= 2) {
-            Merger merger = new Merger();
-            for (int i = 0; i < args.length - 1; i++) {
-                try {
-                    merger.performMerge(args[i], args[i+1]);
-                } catch (Exception e) {
-                    logger.error(e);
-                }
+        String[] branches = StringUtils.split(
+            PropertiesUtil.getString("branches.map"), ";");
+        Merger merger = new Merger();
+        for (int i = 0; i < branches.length; i++) {
+            String[] mergeArgs = StringUtils.split(branches[i], ",");
+            if(mergeArgs.length != 3){
+                logger.error("Incorrect branches configuration: {}", branches[i]);
+                logger.error("A valid entry must be: sourceBranch,targetBranch,RedmineTaskNumber");
+                System.exit(0);
             }
-            System.exit(0);
-        } else {
-            logger.error("No arguments received.");
-            System.exit(1);
+            try {
+                merger.performMerge( mergeArgs[0], mergeArgs[1], mergeArgs[2]);
+            } catch (Exception e) {
+                logger.error(e);
+            }
         }
+        System.exit(0);
     }
 }
