@@ -89,4 +89,14 @@ public class AppTest
         toRev = merger.getToRevision(eligibleRevisions);
     }
 
+    public void testBuild(){
+        boolean result = merger.isBuildSuccessful("VERSION_4_4_0_0");
+        assertTrue( result);
+    }
+
+    public void testEmailNotification(){
+        Notifier.notifySuccessfulMerge("VERSION_4_4_0_0", "VERSION_4_5_0_0",
+            38, 45, "r38\nr39\nr40\nr45");
+    }
+
 }

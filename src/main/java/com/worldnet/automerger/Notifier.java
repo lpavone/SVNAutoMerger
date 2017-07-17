@@ -12,16 +12,6 @@
 
 package com.worldnet.automerger;
 
-import com.jcabi.email.Envelope;
-import com.jcabi.email.Postman;
-import com.jcabi.email.Protocol;
-import com.jcabi.email.Token;
-import com.jcabi.email.enclosure.EnPlain;
-import com.jcabi.email.stamp.StRecipient;
-import com.jcabi.email.stamp.StSender;
-import com.jcabi.email.stamp.StSubject;
-import com.jcabi.email.wire.Smtp;
-import java.io.IOException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,30 +22,26 @@ import org.apache.logging.log4j.Logger;
 public class Notifier {
 
   static final Logger logger = LogManager.getLogger();
+  private static final String EMAIL_TMPL_CMD = "printf \"%s\" | sendmail %s";
+  private static final String EMAIL_TMPL_CONTENT = "From: %s\nSubject: %s\n%s";
 
   private static void sendEmail(String emailSubject, String emailBody) {
-    logger.info("Notifying DEV and QA teams...");
-    if (1==1) return;
-    Postman postman = new Postman.Default(
-        new Smtp(
-            new Token(
-                  PropertiesUtil.getString("email.user"),
-                  PropertiesUtil.getString("email.password"))
-                .access(new Protocol.Smtp("smtp.gmail.com", 587)
-            )
-        )
-    );
+    logger.info("About to notify DEV and QA teams...");
+    String emailTempFileContent = String.format(
+        EMAIL_TMPL_CONTENT,
+        PropertiesUtil.getString("email.sender"),
+        emailSubject,
+        emailBody);
     try {
-      postman.send(
-          new Envelope.Mime()
-              .with(new StSender(PropertiesUtil.getString("email.sender")))
-              .with(new StRecipient("Dev Team", "dev@worldnettps.com"))
-              .with(new StRecipient("QA Team", "qa@worldnettps.com"))
-              .with(new StSubject(emailSubject))
-              .with(new EnPlain(emailBody))
+      String sendMailCommand = String.format(
+          EMAIL_TMPL_CMD,
+          emailTempFileContent,
+          PropertiesUtil.getString("email.to.notify")
       );
-    } catch (IOException e) {
-      logger.error("Email notifications failed", e);
+      CommandExecutor.run( sendMailCommand, null);
+
+    } catch (Exception e) {
+      logger.error("Email notification has failed", e);
     }
   }
 
@@ -79,11 +65,21 @@ public class Notifier {
 
   public static void notifySuccessfulMerge(String sourceBranch, String targetBranch,
       int fromRevision, int toRevision, String mergedRevisions) {
-    String subject = String.format("[AUTO-MERGER] Changes have been Merged (%s -> %s)", sourceBranch, targetBranch);
+    String subject = String.format("[AUTO-MERGER] Changes have been merged (%s -> %s)", sourceBranch, targetBranch);
     String body = String.format(
         "Changes have been successfully merged from branch %s into %s (from revision %s to %s).\n\n"+
         "Current merged revisions:\n\n%s",
         sourceBranch, targetBranch, fromRevision, toRevision, mergedRevisions);
+    sendEmail(subject, body);
+  }
+
+  public static void notifyFailedBuild(String sourceBranch, String targetBranch, int fromRevision,
+      int toRevision) {
+    String subject = String.format("[AUTO-MERGER] Failed build (%s -> %s)", sourceBranch, targetBranch);
+    String body = String.format(
+        "Build is broken after merge branch %s into %s (from revision %s to %s).\n\n"+
+        "Changes have not been committed, manual investigation is required.",
+        sourceBranch, targetBranch, fromRevision, toRevision);
     sendEmail(subject, body);
   }
 }

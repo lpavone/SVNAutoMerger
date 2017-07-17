@@ -48,26 +48,34 @@ public class Merger {
       String mergeOutput = merge( sourceBranch, targetBranch, fromRevision, toRevision);
 
       if (isSuccessfulMerge(mergeOutput)){
-        logger.info("Successful merge, changes will be committed in Redmine task #{}", redmineTaskNumber);
-        String commitMessageFilePath = PropertiesUtil.getString("tmp.commit.message.file");
-        createCommitMessageFile(
-            commitMessageFilePath,
-            sourceBranch,
-            targetBranch,
-            fromRevision,
-            toRevision,
-            redmineTaskNumber);
+        //check if build is ok
+        if (isBuildSuccessful(targetBranch)) {
+          logger.info("Successful merge, changes will be committed in Redmine task #{}", redmineTaskNumber);
+          String commitMessageFilePath = PropertiesUtil.getString("tmp.commit.message.file");
+          createCommitMessageFile(
+              commitMessageFilePath,
+              sourceBranch,
+              targetBranch,
+              fromRevision,
+              toRevision,
+              redmineTaskNumber);
 
-        String commitOutput = commit( targetBranch, commitMessageFilePath);
+          String commitOutput = commit( targetBranch, commitMessageFilePath);
 
-        if (isSuccessfulCommit(commitOutput)){
-          logger.info("Changes have been successfully committed.");
-          logger.info("Logging merged revisions:");
-          String mergedRevisions = mergeInfoMergedRevisions( sourceBranch, targetBranch);
-          Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision, mergedRevisions);
-        } else {
-          logger.info("Commit was not successful! No changes have been committed into repository");
-          Notifier.notifyCommitFailure(sourceBranch, targetBranch, fromRevision, toRevision);
+          if (isSuccessfulCommit(commitOutput)){
+            logger.info("Changes have been successfully committed.");
+            logger.info("Logging merged revisions:");
+            String mergedRevisions = mergeInfoMergedRevisions( sourceBranch, targetBranch);
+            Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision, mergedRevisions);
+          } else {
+            logger.info("Commit was not successful! No changes have been committed into repository");
+            Notifier.notifyCommitFailure(sourceBranch, targetBranch, fromRevision, toRevision);
+          }
+          Utils.removeTempFile( commitMessageFilePath);
+
+        } else{
+          logger.info("Build has failed after merge, please check logs for details. Changes will not be committed.");
+          Notifier.notifyFailedBuild(sourceBranch, targetBranch, fromRevision, toRevision);
         }
 
       } else {
@@ -243,4 +251,26 @@ public class Merger {
     return StringUtils.contains(commitOutput, "Committed revision")
         && !StringUtils.contains(commitOutput, SVN_ERROR_PREFIX);
   }
+
+  /**
+   * Run the ANT task to compile the project and check results.
+   *
+   * @return <code>true</code> if build is successful, <code>false</code> if it's failed.
+   */
+  public boolean isBuildSuccessful(String branchName){
+    String buildOutput = runBuildCommand(branchName);
+    return StringUtils.contains(buildOutput,"BUILD SUCCESSFUL") &&
+        !StringUtils.contains(buildOutput,"BUILD FAILED");
+  }
+
+  /**
+   * Run the command the check if the build is ok.
+   * @param branchName branch name were the build is executed
+   * @return the command's output
+   */
+  private String runBuildCommand(String branchName){
+    String command = "ant compile";
+    return CommandExecutor.run(command, TEMP_FOLDER + "/" + branchName);
+  }
+
 }

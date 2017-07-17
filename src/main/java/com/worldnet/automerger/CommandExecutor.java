@@ -38,7 +38,13 @@ public class CommandExecutor {
     StringBuilder output = new StringBuilder();
     try {
       logger.info("$ {}", command);
-      Process p = Runtime.getRuntime().exec(command, null, new File(pathName));
+      final Process p;
+      if (StringUtils.isNotBlank(pathName)){
+        p = Runtime.getRuntime().exec(command, null, new File(pathName));
+      } else{
+        String[] cmd = { "/bin/sh", "-c", command};
+        p = Runtime.getRuntime().exec(cmd);
+      }
       BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
       String line;
       while ((line = stdInput.readLine()) != null) {
