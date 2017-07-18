@@ -26,9 +26,13 @@ if (eligibleRevisions is not empty){
     checkoutOrUpdateTargetBranch;
     mergeEligibleRevisions;
     if( succesfulMerge){
-        commitChangesIntoTargetBranch;
-        if( succesfulCommit){
-            logRevisionsMerged;
+        if( successfulBuild){
+            commitChangesIntoTargetBranch;
+            if( succesfulCommit){
+                logRevisionsMerged;
+            } else{
+                notifyDevelopers;
+            }
         } else{
             notifyDevelopers;
         }
