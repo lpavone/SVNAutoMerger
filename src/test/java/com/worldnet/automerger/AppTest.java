@@ -4,6 +4,8 @@ import java.io.IOException;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.Assert;
 
 /**
  * Unit test for simple App.
@@ -66,8 +68,10 @@ public class AppTest
 
     public void testMerge() {
         setRevisionsRange();
-        String output = merger.merge(SOURCE_BRANCH, TARGET_BRANCH, fromRev, toRev);
-        assertTrue( merger.isSuccessfulMerge(output));//ok if no exception
+        String output = merger.updateBranch(TARGET_BRANCH);
+        assertTrue( merger.isSuccessfulUpdate(output));
+        String output2 = merger.merge(SOURCE_BRANCH, TARGET_BRANCH, fromRev, toRev);
+        assertTrue( merger.isSuccessfulMerge(output2));//ok if no exception
     }
 
     public void testCommitMessageFileCreation() throws IOException {
@@ -82,12 +86,17 @@ public class AppTest
 
     private void setRevisionsRange(){
         String eligibleRevisions = merger.mergeInfoEligibleRevisions(SOURCE_BRANCH, TARGET_BRANCH);
-        fromRev = merger.getFromRevision(eligibleRevisions);
-        toRev = merger.getToRevision(eligibleRevisions);
+        if (StringUtils.isNotBlank(eligibleRevisions)){
+            fromRev = merger.getFromRevision(eligibleRevisions);
+            toRev = merger.getToRevision(eligibleRevisions);
+        } else {
+            Assert.fail("No Eligible Revisions");
+        }
+
     }
 
     public void testBuild(){
-        boolean result = merger.isBuildSuccessful("VERSION_4_4_0_0");
+        boolean result = merger.isBuildSuccessful(TARGET_BRANCH);
         assertTrue( result);
     }
 
@@ -96,6 +105,11 @@ public class AppTest
             38, 45);//, "r38\nr39\nr40\nr45");
         Notifier.notifyCommitFailure(SOURCE_BRANCH, TARGET_BRANCH,
             38, 45);//, "r38\nr39\nr40\nr45");
+    }
+
+    public void testCopyPropertiesFile() throws Exception {
+        merger.createLocalConfigFile(TARGET_BRANCH);
+        assertTrue( true);//ok if no exception
     }
 
     /**

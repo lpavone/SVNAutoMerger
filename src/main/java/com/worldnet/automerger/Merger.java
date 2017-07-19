@@ -16,6 +16,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Set;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -159,7 +164,27 @@ public class Merger {
       if ( !isSuccessfulCheckout( output)){
         throw new Exception("Error checking out working copy");
       }
+      createLocalConfigFile(targetBranch);
     }
+  }
+
+  /**
+   * Create localconf folder and properties file necessary to run build task.
+   * @param targetBranch
+   */
+  public void createLocalConfigFile(String targetBranch) throws Exception {
+    String newDirectoryPath = TEMP_FOLDER + "/" + targetBranch + "/localconf/";
+    if ( !Files.exists( Paths.get(newDirectoryPath))) {
+      Set<PosixFilePermission> permissions = PosixFilePermissions.fromString("rwxrwxrwx");
+      FileAttribute<Set<PosixFilePermission>> fileAttributes = PosixFilePermissions
+          .asFileAttribute(permissions);
+      Files.createDirectory(Paths.get(newDirectoryPath), fileAttributes);
+    }
+    Files.copy(
+        Paths.get("src/main/resources/worldnettps.properties"),
+        Paths.get(newDirectoryPath + "/worldnettps.properties"),
+        StandardCopyOption.REPLACE_EXISTING);
+    logger.info("worldnettps.properties file has been copied into localconf folder.");
   }
 
   public String checkoutBranch(String branchName){
