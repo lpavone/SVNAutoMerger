@@ -12,13 +12,17 @@
 
 package com.worldnet.automerger;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.util.IOUtils;
 
 /**
  * Executor of command line orders.
@@ -28,6 +32,9 @@ import org.apache.logging.log4j.Logger;
 public class CommandExecutor {
 
   static final Logger logger = LogManager.getLogger();
+  private static final String CMD_LOG_TMPL = ":{}$ {}";
+
+  private CommandExecutor(){}
 
   /**
    * Execute a command from specified path
@@ -36,24 +43,35 @@ public class CommandExecutor {
    * @return command's output
    */
   static String run(String command, String pathName) {
-    StringBuilder output = new StringBuilder();
     try {
-      logger.info(":{}$ {}", Optional.ofNullable(pathName).orElse(""), command);
-      final Process p;
+      logger.info(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), command);
+      final Process process;
       if (StringUtils.isNotBlank(pathName)){
-        p = Runtime.getRuntime().exec(command, null, new File(pathName));
+        process = Runtime.getRuntime().exec(command, null, new File(pathName));
       } else{
         String[] cmd = { "/bin/sh", "-c", command};
-        p = Runtime.getRuntime().exec(cmd);
+        process = Runtime.getRuntime().exec(cmd);
       }
-      BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-      String line;
-      while ((line = stdInput.readLine()) != null) {
-        output.append(line + "\n");
-      }
-      logger.info(":{}$ {}", Optional.ofNullable(pathName).orElse(""), output.toString());
+      ExecutorService newFixedThreadPool = Executors.newFixedThreadPool(1);
+      Future<String> output = newFixedThreadPool.submit(() -> {
+        return IOUtils.toString( new InputStreamReader(process.getInputStream()));
+      });
+      Future<String> error = newFixedThreadPool.submit(() -> {
+        return IOUtils.toString( new InputStreamReader(process.getErrorStream()));
+      });
 
-      return output.toString();
+      newFixedThreadPool.shutdown();
+
+      if (!process.waitFor(3, TimeUnit.MINUTES)) {
+        logger.info("Destroy process, it's been hanged out for more than 3 minutes!");
+        process.destroy();
+      }
+      logger.info(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), output.get());
+      if (StringUtils.isNotBlank(error.get())){
+        logger.error(CMD_LOG_TMPL,  Optional.ofNullable(pathName).orElse(""), error.get());
+      }
+
+      return output.get();
 
     } catch (Exception e) {
       logger.error("Error executing command: " + command, e);
