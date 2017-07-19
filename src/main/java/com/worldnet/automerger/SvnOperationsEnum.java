@@ -17,15 +17,19 @@ package com.worldnet.automerger;
  */
 public enum SvnOperationsEnum {
 
-  COMMIT("svn commit -F %s --username %s --password %s"),
-  REVERT("svn revert . -R --username %s --password %s"),
-  UPDATE("svn update --force --username %s --password %s"),
-  CHECKOUT("svn co %s --force --username %s --password %s"),
-  MERGE("svn merge --non-interactive -r %s:%s %s -x --ignore-eol-style --username %s --password %s"),
-  MERGEINFO_ELIGIBLE("svn mergeinfo --show-revs eligible %s %s --username %s --password %s"),
-  MERGEINFO_MERGED("svn mergeinfo --show-revs merged %s %s --username %s --password %s");
+  COMMIT("svn commit -F %s"),
+  REVERT("svn revert . -R"),
+  UPDATE("svn update --force"),
+  CHECKOUT("svn co %s --force"),
+  MERGE("svn merge --non-interactive -r %s:%s %s -x --ignore-eol-style"),
+  MERGEINFO_ELIGIBLE("svn mergeinfo --show-revs eligible %s %s"),
+  MERGEINFO_MERGED("svn mergeinfo --show-revs merged %s %s");
 
   private final String command;
+  /**
+   * Used to add username and password to any command if necessary.
+   */
+  public static final String SVN_CREDENTIALS = " --username %s --password %s";
 
   SvnOperationsEnum(String command) {
     this.command = command;

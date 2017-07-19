@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,13 +31,14 @@ public class Merger {
   private static String SVN_PASSWORD = PropertiesUtil.getString("svn.password");
   private static String TEMP_FOLDER = PropertiesUtil.getString("temp.folder");
   private static String BASE_REPO = PropertiesUtil.getString("base.repository.path");
+  private static boolean SVN_USE_PASSWORD_AUTH = BooleanUtils.toBoolean(PropertiesUtil.getString("svn.use.password.auth"));
   private static String SVN_ERROR_PREFIX = "svn: E";
   private static String COMMIT_MSG_TMPL = "Feature #%s - Merge changes from %s into %s\n\n* [AUTO-MERGE] Revisions merged: -r%s:%s\n\nrefs #%s @00h05m";
 
 
   static final Logger logger = LogManager.getLogger();
 
-  public void performMerge(String sourceBranch, String targetBranch,String redmineTaskNumber) throws Exception {
+  public void performMerge(String sourceBranch, String targetBranch, String redmineTaskNumber) throws Exception {
     logger.info("Attempting automatic merge of changes from {} to {}", sourceBranch, targetBranch);
     String eligibleRevisions = mergeInfoEligibleRevisions( sourceBranch, targetBranch);
     if (StringUtils.isNotBlank( eligibleRevisions)){
@@ -161,68 +163,75 @@ public class Merger {
   }
 
   public String checkoutBranch(String branchName){
-    String command = String.format( SvnOperationsEnum.CHECKOUT.command(),
-        BASE_REPO + branchName,
-        SVN_USER,
-        SVN_PASSWORD);
+    StringBuilder command = new StringBuilder(
+        String.format( SvnOperationsEnum.CHECKOUT.command(), BASE_REPO + branchName))
+        .append( createSvnCredentials());
 
-    return CommandExecutor.run(command, TEMP_FOLDER);
+    return CommandExecutor.run(command.toString(), TEMP_FOLDER);
   }
 
   public String updateBranch(String branchName){
-    String command = String.format( SvnOperationsEnum.UPDATE.command(),
-        SVN_USER,
-        SVN_PASSWORD);
+    StringBuilder command = new StringBuilder( SvnOperationsEnum.UPDATE.command())
+        .append( createSvnCredentials());
 
-    return CommandExecutor.run(command, TEMP_FOLDER + "/" + branchName);
+    return CommandExecutor.run(command.toString(), TEMP_FOLDER + "/" + branchName);
   }
 
   public String revertChanges(String branchName){
-    String command = String.format( SvnOperationsEnum.REVERT.command(),
-        SVN_USER,
-        SVN_PASSWORD);
+    StringBuilder command = new StringBuilder( SvnOperationsEnum.REVERT.command())
+        .append( createSvnCredentials());
 
-    return CommandExecutor.run(command, TEMP_FOLDER + "/" + branchName);
+    return CommandExecutor.run(command.toString(), TEMP_FOLDER + "/" + branchName);
   }
 
   public String merge(String sourceBranch, String targetBranch, int fromRevision, int toRevision){
-    String command = String.format( SvnOperationsEnum.MERGE.command(),
-        fromRevision,
-        toRevision,
-        BASE_REPO + sourceBranch,
-        SVN_USER,
-        SVN_PASSWORD);
+    StringBuilder command = new StringBuilder(
+        String.format( SvnOperationsEnum.MERGE.command(),
+          fromRevision,
+          toRevision,
+          BASE_REPO + sourceBranch))
+        .append( createSvnCredentials());
 
-    return CommandExecutor.run(command, TEMP_FOLDER + "/" + targetBranch);
+    return CommandExecutor.run(command.toString(), TEMP_FOLDER + "/" + targetBranch);
   }
 
   public String mergeInfoEligibleRevisions(String sourceBranch, String targetBranch){
-    String command = String.format( SvnOperationsEnum.MERGEINFO_ELIGIBLE.command(),
-        BASE_REPO + sourceBranch,
-        BASE_REPO + targetBranch,
-        SVN_USER,
-        SVN_PASSWORD);
+    StringBuilder command = new StringBuilder(
+        String.format( SvnOperationsEnum.MERGEINFO_ELIGIBLE.command(),
+          BASE_REPO + sourceBranch,
+          BASE_REPO + targetBranch))
+        .append( createSvnCredentials());
 
-    return CommandExecutor.run(command, TEMP_FOLDER);
+    return CommandExecutor.run(command.toString(), TEMP_FOLDER);
   }
 
   public String mergeInfoMergedRevisions(String sourceBranch, String targetBranch){
-    String command = String.format( SvnOperationsEnum.MERGEINFO_MERGED.command(),
-        BASE_REPO + sourceBranch,
-        BASE_REPO + targetBranch,
-        SVN_USER,
-        SVN_PASSWORD);
+    StringBuilder command = new StringBuilder(
+        String.format( SvnOperationsEnum.MERGEINFO_MERGED.command(),
+            BASE_REPO + sourceBranch,
+            BASE_REPO + targetBranch))
+        .append( createSvnCredentials());
 
-    return CommandExecutor.run(command, TEMP_FOLDER);
+    return CommandExecutor.run(command.toString(), TEMP_FOLDER);
   }
 
   public String commit(String branchName, String messageFilePath){
-    String command = String.format( SvnOperationsEnum.COMMIT.command(),
-        messageFilePath,
-        SVN_USER,
-        SVN_PASSWORD);
+    StringBuilder command = new StringBuilder(
+        String.format( SvnOperationsEnum.COMMIT.command(),
+          messageFilePath))
+        .append( createSvnCredentials());
 
-    return CommandExecutor.run(command, TEMP_FOLDER + "/" + branchName);
+    return CommandExecutor.run(command.toString(), TEMP_FOLDER + "/" + branchName);
+  }
+
+  /**
+   * Creates the String to include SVN user and password in the command if necessary.
+   * @return
+   */
+  private String createSvnCredentials() {
+    return SVN_USE_PASSWORD_AUTH
+        ? String.format(SvnOperationsEnum.SVN_CREDENTIALS, SVN_USER, SVN_PASSWORD)
+        : "";
   }
 
   public boolean isSuccessfulCheckout(String output){

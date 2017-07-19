@@ -49,7 +49,8 @@ public class Notifier {
       int fromRevision, int toRevision) {
     String subject = String.format("[AUTO-MERGER] Conflicts have been found during merge (%s -> %s)", sourceBranch, targetBranch);
     String body = String.format(
-        "Conflicts have been found attempting to merge branch %s into %s (from revision %s to %s), manual merge is required.",
+        "Conflicts have been found attempting to merge branch %s into %s (from revision %s to %s).\n"+
+            "Manual merge is required.",
         sourceBranch, targetBranch, fromRevision, toRevision);
     sendEmail(subject, body);
   }
@@ -58,7 +59,8 @@ public class Notifier {
       int toRevision) {
     String subject = String.format("[AUTO-MERGER] Error during merge commit (%s -> %s)", sourceBranch, targetBranch);
     String body = String.format(
-        "Error attempting to commit merge result of branch %s into %s (from revision %s to %s), manual merge is required.",
+        "Error attempting to commit merge result of branch %s into %s (from revision %s to %s).\n"+
+            "Manual merge is required.",
         sourceBranch, targetBranch, fromRevision, toRevision);
     sendEmail(subject, body);
   }
@@ -67,7 +69,7 @@ public class Notifier {
       int fromRevision, int toRevision, String mergedRevisions) {
     String subject = String.format("[AUTO-MERGER] Changes have been merged (%s -> %s)", sourceBranch, targetBranch);
     String body = String.format(
-        "Changes have been successfully merged from branch %s into %s (from revision %s to %s).\n\n"+
+        "Changes have been successfully merged from branch %s into %s (from revision %s to %s).\n"+
         "Current merged revisions:\n\n%s",
         sourceBranch, targetBranch, fromRevision, toRevision, mergedRevisions);
     sendEmail(subject, body);
@@ -77,7 +79,7 @@ public class Notifier {
       int toRevision) {
     String subject = String.format("[AUTO-MERGER] Failed build (%s -> %s)", sourceBranch, targetBranch);
     String body = String.format(
-        "Build is broken after merge branch %s into %s (from revision %s to %s).\n\n"+
+        "Build is broken after merge branch %s into %s (from revision %s to %s).\n"+
         "Changes have not been committed, manual investigation is required.",
         sourceBranch, targetBranch, fromRevision, toRevision);
     sendEmail(subject, body);

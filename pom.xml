@@ -41,12 +41,20 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <temp.folder>xxxxxxxxxxxxx</temp.folder>
+    <!-- Directory used to checkout the branches and store merge result. -->
+    <temp.folder>/tmp/myrepo/branch</temp.folder>
     <tmp.commit.message.file>/tmp/commit_msg</tmp.commit.message.file>
-    <base.repository.path>xxxxxx</base.repository.path>
-    <svn.username>xxxxx</svn.username>
-    <svn.password>xxxxx</svn.password>
-    <branches.map>Auto-Merger,Auto-Merger_2,9999;Auto-Merger_2,Auto-Merger_3,5555</branches.map>
+    <!-- Base path of remote SVN repository. -->
+    <base.repository.path>file:///var/lib/svn/myrepo/branch/</base.repository.path>
+    <!--true: enforce SVN authentication using username and password for any SVN operation.
+        false: a public key authentication will be used. -->
+    <svn.use.password.auth>false</svn.use.password.auth>
+    <svn.username>xxxxxxx</svn.username>
+    <svn.password>xxxxxx</svn.password>
+    <!-- Branches configuration: the value must a comma separated String indicating source branch, target branch,
+    and the Redmine task number where the changes will be committed.
+      i.e.: VERSION_4_4_0_0,VERSION_4_5_0_0,9999 -->
+    <branches.map>VERSION_4_4_0_0,VERSION_4_5_0_0,9999</branches.map>
     <email.sender>xxxxxxxx</email.sender>
     <email.to.notify>xxxxxxxx</email.to.notify>
   </properties>

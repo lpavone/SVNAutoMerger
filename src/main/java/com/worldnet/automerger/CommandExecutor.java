@@ -15,6 +15,7 @@ package com.worldnet.automerger;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,7 +38,7 @@ public class CommandExecutor {
   static String run(String command, String pathName) {
     StringBuilder output = new StringBuilder();
     try {
-      logger.info("$ {}", command);
+      logger.info(":{}$ {}", Optional.ofNullable(pathName).orElse(""), command);
       final Process p;
       if (StringUtils.isNotBlank(pathName)){
         p = Runtime.getRuntime().exec(command, null, new File(pathName));
@@ -50,7 +51,7 @@ public class CommandExecutor {
       while ((line = stdInput.readLine()) != null) {
         output.append(line + "\n");
       }
-      logger.info("$ {}", output.toString());
+      logger.info(":{}$ {}", Optional.ofNullable(pathName).orElse(""), output.toString());
 
       return output.toString();
 

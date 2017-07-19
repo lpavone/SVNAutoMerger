@@ -4,8 +4,6 @@ import java.io.IOException;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * Unit test for simple App.
@@ -14,11 +12,10 @@ public class AppTest
     extends TestCase
 {
 
-    private static String AUTOMERGER = "Auto-Merger";
-    private static String AUTOMERGER2 = "Auto-Merger_2";
-    private static String COMMIT_MSG_FILE_PATH = "/tmp/commit_msg";
+    private static String SOURCE_BRANCH = "VERSION_4_4_0_0";
+    private static String TARGET_BRANCH = "VERSION_4_5_0_0";
+    private static String COMMIT_MSG_FILE_PATH = PropertiesUtil.getString("tmp.commit.message.file");
     private Merger merger = new Merger();
-    static final Logger logger = LogManager.getLogger();
 
     private int fromRev;
     private int toRev;
@@ -42,49 +39,49 @@ public class AppTest
     }
 
     public void testCheckout() {
-        String output = merger.checkoutBranch(AUTOMERGER);
+        String output = merger.checkoutBranch(SOURCE_BRANCH);
         assertTrue( merger.isSuccessfulCheckout(output));
     }
 
     public void testUpdate() {
-        String output = merger.updateBranch(AUTOMERGER);
+        String output = merger.updateBranch(SOURCE_BRANCH);
         assertTrue( merger.isSuccessfulUpdate(output));
     }
 
     public void testRevert() {
-        String output = merger.revertChanges(AUTOMERGER);
+        String output = merger.revertChanges(TARGET_BRANCH);
         assertTrue( true);//ok if no exception
     }
 
     public void testMergeInfo() {
-        merger.mergeInfoEligibleRevisions(AUTOMERGER, AUTOMERGER2);
-        merger.mergeInfoMergedRevisions(AUTOMERGER, AUTOMERGER2);
+        merger.mergeInfoEligibleRevisions(SOURCE_BRANCH, TARGET_BRANCH);
+        merger.mergeInfoMergedRevisions(SOURCE_BRANCH, TARGET_BRANCH);
         assertTrue( true);//ok if no exception
     }
 
     public void testCheckoutOrUpdateTargetBranch() throws Exception {
-        merger.checkoutOrUpdateTargetBranch(AUTOMERGER2);
+        merger.checkoutOrUpdateTargetBranch(TARGET_BRANCH);
         assertTrue( true);//ok if no exception
     }
 
     public void testMerge() {
         setRevisionsRange();
-        String output = merger.merge(AUTOMERGER, AUTOMERGER2, fromRev, toRev);
+        String output = merger.merge(SOURCE_BRANCH, TARGET_BRANCH, fromRev, toRev);
         assertTrue( merger.isSuccessfulMerge(output));//ok if no exception
     }
 
     public void testCommitMessageFileCreation() throws IOException {
-        merger.createCommitMessageFile(COMMIT_MSG_FILE_PATH, AUTOMERGER, AUTOMERGER2, 12045, 12099, "9999");
+        merger.createCommitMessageFile(COMMIT_MSG_FILE_PATH, SOURCE_BRANCH, TARGET_BRANCH, 12045, 12099, "9999");
         assertTrue( true);//ok if no exception
     }
 
     public void testCommit(){
-        String output = merger.commit(AUTOMERGER2, COMMIT_MSG_FILE_PATH);
+        String output = merger.commit(TARGET_BRANCH, COMMIT_MSG_FILE_PATH);
         assertTrue( merger.isSuccessfulCommit(output));
     }
 
     private void setRevisionsRange(){
-        String eligibleRevisions = merger.mergeInfoEligibleRevisions(AUTOMERGER, AUTOMERGER2);
+        String eligibleRevisions = merger.mergeInfoEligibleRevisions(SOURCE_BRANCH, TARGET_BRANCH);
         fromRev = merger.getFromRevision(eligibleRevisions);
         toRev = merger.getToRevision(eligibleRevisions);
     }
@@ -95,8 +92,17 @@ public class AppTest
     }
 
     public void testEmailNotification(){
-        Notifier.notifySuccessfulMerge("VERSION_4_4_0_0", "VERSION_4_5_0_0",
-            38, 45, "r38\nr39\nr40\nr45");
+        Notifier.notifyFailedBuild(SOURCE_BRANCH, TARGET_BRANCH,
+            38, 45);//, "r38\nr39\nr40\nr45");
+        Notifier.notifyCommitFailure(SOURCE_BRANCH, TARGET_BRANCH,
+            38, 45);//, "r38\nr39\nr40\nr45");
+    }
+
+    /**
+     * Main test case, will try to perform a merge and commit the changes.
+     */
+    public void testFullMergeProcess() throws Exception {
+        merger.performMerge(SOURCE_BRANCH, TARGET_BRANCH, "9999");
     }
 
 }
