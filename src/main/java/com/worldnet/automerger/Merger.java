@@ -32,11 +32,9 @@ import org.apache.logging.log4j.Logger;
  */
 public class Merger {
 
-  private static String SVN_USER = PropertiesUtil.getString("svn.username");
-  private static String SVN_PASSWORD = PropertiesUtil.getString("svn.password");
+
   private static String TEMP_FOLDER = PropertiesUtil.getString("temp.folder");
   private static String BASE_REPO = PropertiesUtil.getString("base.repository.path");
-  private static boolean SVN_USE_PASSWORD_AUTH = BooleanUtils.toBoolean(PropertiesUtil.getString("svn.use.password.auth"));
   private static String SVN_ERROR_PREFIX = "svn: E";
   private static String COMMIT_MSG_TMPL = "Feature #%s - Merge changes from %s into %s\n\n* [AUTO-MERGE] Revisions merged: -r%s:%s\n\nrefs #%s @00h05m";
 
@@ -46,56 +44,52 @@ public class Merger {
   public void performMerge(String sourceBranch, String targetBranch, String redmineTaskNumber) throws Exception {
     logger.info("Attempting automatic merge of changes from {} to {}", sourceBranch, targetBranch);
     String eligibleRevisions = mergeInfoEligibleRevisions( sourceBranch, targetBranch);
-    if (StringUtils.isNotBlank( eligibleRevisions)){
-      checkoutOrUpdateTargetBranch(sourceBranch);
-      checkoutOrUpdateTargetBranch(targetBranch);
-      int fromRevision = getFromRevision(eligibleRevisions);
-      int toRevision = getToRevision(eligibleRevisions);
-
-      String mergeOutput = merge( sourceBranch, targetBranch, fromRevision, toRevision);
-
-      if (isSuccessfulMerge(mergeOutput)){
-        //check if build is ok
-        if (isBuildSuccessful(targetBranch)) {
-          logger.info("Successful merge, changes will be committed in Redmine task #{}", redmineTaskNumber);
-          String commitMessageFilePath = PropertiesUtil.getString("tmp.commit.message.file");
-          createCommitMessageFile(
-              commitMessageFilePath,
-              sourceBranch,
-              targetBranch,
-              fromRevision,
-              toRevision,
-              redmineTaskNumber);
-
-          String commitOutput = commit( targetBranch, commitMessageFilePath);
-
-          if (isSuccessfulCommit(commitOutput)){
-            logger.info("Changes have been successfully committed.");
-            logger.info("Logging merged revisions:");
-            String mergedRevisions = mergeInfoMergedRevisions( sourceBranch, targetBranch);
-            Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision, mergedRevisions);
-          } else {
-            logger.info("Commit was not successful! No changes have been committed into repository");
-            Notifier.notifyCommitFailure(sourceBranch, targetBranch, fromRevision, toRevision);
-          }
-          Utils.removeTempFile( commitMessageFilePath);
-
-        } else{
-          logger.info("Build has failed after merge, please check logs for details. Changes will not be committed.");
-          Notifier.notifyFailedBuild(sourceBranch, targetBranch, fromRevision, toRevision);
-        }
-
-      } else {
-        logger.info("Conflicts have been found during merge, no changes will be committed.");
-        Notifier.notifyMergeWithConflicts(sourceBranch, targetBranch, fromRevision, toRevision);
-      }
-      
-    } else {
-      logger.info("No eligible revisions from {} to {}, merge aborted.",
-        sourceBranch,
-          targetBranch);
+    if (StringUtils.isBlank( eligibleRevisions)){
+      logger.info("No eligible revisions from {} to {}, merge aborted.", sourceBranch, targetBranch);
+      Notifier.notifyNoEligibleVersions(sourceBranch, targetBranch);
+      return;
     }
-    logger.info("Finished automatic merge of changes from {} to {}", sourceBranch, targetBranch);
+    checkoutOrUpdateTargetBranch(sourceBranch);
+    checkoutOrUpdateTargetBranch(targetBranch);
+    int fromRevision = getFromRevision(eligibleRevisions);
+    int toRevision = getToRevision(eligibleRevisions);
+    //perform merge
+    String mergeOutput = merge( sourceBranch, targetBranch, fromRevision, toRevision);
+    if ( !isSuccessfulMerge(mergeOutput)){
+      logger.info("Conflicts have been found during merge, no changes will be committed.");
+      Notifier.notifyMergeWithConflicts(sourceBranch, targetBranch, fromRevision, toRevision);
+      return;
+    }
+    //check if build is ok after merge
+    if ( !isBuildSuccessful(targetBranch)) {
+      logger.info("Build has failed after merge, please check logs for details. Changes will not be committed.");
+      Notifier.notifyFailedBuild(sourceBranch, targetBranch, fromRevision, toRevision);
+      return;
+    }
+    boolean isCommitModeEnabled = BooleanUtils.toBoolean(
+        PropertiesUtil.getString("enable.commit.mode"));
+    if (isCommitModeEnabled){
+      logger.info("Successful merge, changes will be committed in Redmine task #{}", redmineTaskNumber);
+      String commitMessageFilePath = PropertiesUtil.getString("tmp.commit.message.file");
+      createCommitMessageFile( commitMessageFilePath, sourceBranch, targetBranch,
+          fromRevision, toRevision, redmineTaskNumber);
+      //commit changes
+      String commitOutput = commit( targetBranch, commitMessageFilePath);
+
+      if (isSuccessfulCommit(commitOutput)){
+        logger.info("Changes have been successfully committed.");
+        logger.info("Logging merged revisions:");
+        String mergedRevisions = mergeInfoMergedRevisions( sourceBranch, targetBranch);
+        Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision, mergedRevisions);
+      } else {
+        logger.info("Commit failed! No changes have been committed into repository");
+        Notifier.notifyCommitFailure(sourceBranch, targetBranch, fromRevision, toRevision);
+      }
+      Utils.removeTempFile( commitMessageFilePath);
+      logger.info("Finished automatic merge of changes from {} to {}", sourceBranch, targetBranch);
+    } else {
+      logger.info("Commit mode is disabled, changes have been merged but no commit will be done.");
+    }
   }
 
   /**
@@ -169,7 +163,7 @@ public class Merger {
   }
 
   /**
-   * Create localconf folder and properties file necessary to run build task.
+   * Create localconf folder and properties file necessary to run build task in order to check merge integrity.
    * @param targetBranch
    */
   public void createLocalConfigFile(String targetBranch) throws Exception {
@@ -254,9 +248,17 @@ public class Merger {
    * @return
    */
   private String createSvnCredentials() {
-    return SVN_USE_PASSWORD_AUTH
-        ? String.format(SvnOperationsEnum.SVN_CREDENTIALS, SVN_USER, SVN_PASSWORD)
-        : "";
+    boolean isSvnUsingCredentials =
+        BooleanUtils.toBoolean( PropertiesUtil.getString("svn.enable.password.auth"));
+    String credentials;
+    if (isSvnUsingCredentials){
+      String user = PropertiesUtil.getString("svn.username");
+      String password = PropertiesUtil.getString("svn.password");
+      credentials = String.format(SvnOperationsEnum.SVN_CREDENTIALS, user, password);
+    } else {
+      credentials = "";
+    }
+    return credentials;
   }
 
   public boolean isSuccessfulCheckout(String output){

@@ -84,4 +84,12 @@ public class Notifier {
         sourceBranch, targetBranch, fromRevision, toRevision);
     sendEmail(subject, body);
   }
+
+  public static void notifyNoEligibleVersions(String sourceBranch, String targetBranch) {
+    String subject = String.format("[AUTO-MERGER] No merge required (%s -> %s)", sourceBranch, targetBranch);
+    String body = String.format(
+        "There are no eligible revisions to merge from branch %s into %s.\n",
+        sourceBranch, targetBranch);
+    sendEmail(subject, body);
+  }
 }

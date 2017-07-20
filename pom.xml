@@ -49,15 +49,17 @@
     <base.repository.path>file:///var/lib/svn/myrepo/branch/</base.repository.path>
     <!--true: enforce SVN authentication using username and password for any SVN operation.
         false: a public key authentication will be used. -->
-    <svn.use.password.auth>false</svn.use.password.auth>
+    <svn.enable.password.auth>false</svn.enable.password.auth>
     <svn.username>xxxxxxx</svn.username>
     <svn.password>xxxxxx</svn.password>
     <!-- Branches configuration: the value must a comma separated String indicating source branch, target branch,
     and the Redmine task number where the changes will be committed.
       i.e.: VERSION_4_4_0_0,VERSION_4_5_0_0,9999 -->
     <branches.map>VERSION_4_4_0_0,VERSION_4_5_0_0,9999</branches.map>
-    <email.sender>xxxxxxxx</email.sender>
-    <email.to.notify>xxxxxxxx</email.to.notify>
+    <email.sender>xxx</email.sender>
+    <email.to.notify>xxxx</email.to.notify>
+    <!-- Enable/disable commit feature -->
+    <enable.commit.mode>true</enable.commit.mode>
   </properties>
 
   <dependencies>
