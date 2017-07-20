@@ -16,31 +16,34 @@ Set up this properties in POM file:
 
 **base.repository.path:** base path of remote SVN repository.
 
+**enable.commit.mode:** if set to false will perform merge but will not commit changes (simulation mode)
+
 ## Execution flow
 
-When a merge is performed between B1 (source branch) and B2 (target branch):
+When a merge is performed between a source and target branch, this is the pseudo-code of the process:
 
 ```
 eligibleRevisions = get this using mergeinfo command;
-if (eligibleRevisions is not empty){
-    checkoutOrUpdateTargetBranch;
-    mergeEligibleRevisions;
-    if( succesfulMerge){
-        if( successfulBuild){
-            commitChangesIntoTargetBranch;
-            if( succesfulCommit){
-                logRevisionsMerged;
-            } else{
-                notifyDevelopers;
-            }
-        } else{
-            notifyDevelopers;
-        }
-    } else{
-        notifyDevelopers;
-    }
-} else{
-    endOfExecution;
+if (eligibleRevisions is empty){
+  notify and abort;
+}
+checkout or update source branch;
+checkout or update target branch;
+perform merge of eligible revisions;
+if( not succesful merge){
+  notify and abort;
+}
+if( not successful build){
+  notify and abort;
+}
+if( is commit mode enabled){
+  commit changes into target branch;
+  if( successful commit){
+    log merged revisions;
+    notify;
+  } else{
+    notify;
+  }
 }
 ```
 
