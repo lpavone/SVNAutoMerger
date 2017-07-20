@@ -30,7 +30,7 @@ if (eligibleRevisions is empty){
 checkout or update source branch;
 checkout or update target branch;
 perform merge of eligible revisions;
-if( not succesful merge){
+if( there were conflicts during merge){
   notify and abort;
 }
 if( not successful build){
@@ -46,8 +46,6 @@ if( is commit mode enabled){
   }
 }
 ```
-
-A **succesfulMerge** means there were no conflicts at all.
 
 ## Branches configuration
 
