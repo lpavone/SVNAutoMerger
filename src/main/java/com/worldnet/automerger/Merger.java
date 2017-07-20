@@ -134,8 +134,7 @@ public class Merger {
    */
   public int getFromRevision(String eligibleRevisions) {
     String revision = StringUtils.split(eligibleRevisions, System.getProperty("line.separator"))[0];
-    //decrease the revision by 1 to include the first one eligible
-    return Integer.parseInt(StringUtils.remove(revision, "r")) - 1;
+    return Integer.parseInt(StringUtils.remove(revision, "r"));
   }
 
   /**
@@ -203,10 +202,21 @@ public class Merger {
     return CommandExecutor.run(command.toString(), TEMP_FOLDER + "/" + branchName);
   }
 
+  /**
+   * The fromRevision value is decreased by 1 to meet the requirements of subversion merge command using
+   * revisions range (-r [--revision] ARG ).
+   * i.e.: if eligible revisions are
+   * r4709
+   * r4711
+   * r4712
+   * then the range argument must be "-r4708:4712".
+   *
+   * Only decreasing the number here to leave the email notifications having the correct number.
+   */
   public String merge(String sourceBranch, String targetBranch, int fromRevision, int toRevision){
     StringBuilder command = new StringBuilder(
         String.format( SvnOperationsEnum.MERGE.command(),
-          fromRevision,
+          fromRevision - 1,
           toRevision,
           BASE_REPO + sourceBranch))
         .append( createSvnCredentials());
@@ -267,7 +277,7 @@ public class Merger {
   }
 
   public  boolean isSuccessfulUpdate(String output){
-    return StringUtils.contains(output, "At revision")
+    return StringUtils.contains(output, "revision")
         && !StringUtils.contains(output, SVN_ERROR_PREFIX);
   }
 
