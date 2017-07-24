@@ -60,6 +60,9 @@
     <email.to.notify>xxx</email.to.notify>
     <!-- Enable/disable commit feature -->
     <enable.commit.mode>false</enable.commit.mode>
+    <commit.message.template>
+      Feature #%s - Merge changes from %s into %s%n%n* [AUTO-MERGE] Revisions merged: -r%s:%s%n%nrefs #%s @00h05m
+    </commit.message.template>
   </properties>
 
   <dependencies>

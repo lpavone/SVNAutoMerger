@@ -43,6 +43,9 @@ public class CommandExecutor {
    * @return command's output
    */
   static String run(String command, String pathName) {
+
+    ExecutorService newFixedThreadPool = null;
+
     try {
       logger.info(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), command);
       final Process process;
@@ -52,15 +55,13 @@ public class CommandExecutor {
         String[] cmd = { "/bin/sh", "-c", command};
         process = Runtime.getRuntime().exec(cmd);
       }
-      ExecutorService newFixedThreadPool = Executors.newFixedThreadPool(1);
-      Future<String> output = newFixedThreadPool.submit(() -> {
-        return IOUtils.toString( new InputStreamReader(process.getInputStream()));
-      });
-      Future<String> error = newFixedThreadPool.submit(() -> {
-        return IOUtils.toString( new InputStreamReader(process.getErrorStream()));
-      });
-
-      newFixedThreadPool.shutdown();
+      newFixedThreadPool = Executors.newFixedThreadPool(1);
+      Future<String> output = newFixedThreadPool.submit(() ->
+        IOUtils.toString( new InputStreamReader(process.getInputStream()))
+      );
+      Future<String> error = newFixedThreadPool.submit(() ->
+        IOUtils.toString( new InputStreamReader(process.getErrorStream()))
+      );
 
       if (!process.waitFor(3, TimeUnit.MINUTES)) {
         logger.info("Destroy process, it's been hanged out for more than 3 minutes!");
@@ -75,8 +76,9 @@ public class CommandExecutor {
 
     } catch (Exception e) {
       logger.error("Error executing command: " + command, e);
+    } finally {
+      Optional.ofNullable(newFixedThreadPool).ifPresent(ExecutorService::shutdown);
     }
     return StringUtils.EMPTY;
   }
-
 }

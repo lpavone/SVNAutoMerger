@@ -32,12 +32,9 @@ import org.apache.logging.log4j.Logger;
  */
 public class Merger {
 
-
+  private static String SVN_ERROR_PREFIX = "svn: E";
   private static String TEMP_FOLDER = PropertiesUtil.getString("temp.folder");
   private static String BASE_REPO = PropertiesUtil.getString("base.repository.path");
-  private static String SVN_ERROR_PREFIX = "svn: E";
-  private static String COMMIT_MSG_TMPL = "Feature #%s - Merge changes from %s into %s\n\n* [AUTO-MERGE] Revisions merged: -r%s:%s\n\nrefs #%s @00h05m";
-
 
   static final Logger logger = LogManager.getLogger();
 
@@ -49,8 +46,8 @@ public class Merger {
       Notifier.notifyNoEligibleVersions(sourceBranch, targetBranch);
       return;
     }
-    checkoutOrUpdateTargetBranch(sourceBranch);
-    checkoutOrUpdateTargetBranch(targetBranch);
+    checkoutOrUpdateBranch(sourceBranch);
+    checkoutOrUpdateBranch(targetBranch);
     int fromRevision = getFromRevision(eligibleRevisions);
     int toRevision = getToRevision(eligibleRevisions);
     //perform merge
@@ -106,7 +103,7 @@ public class Merger {
       String targetBranch, int fromRevision, int toRevision, String redmineTicketNumber)
       throws IOException {
 
-    String msgContent = String.format( COMMIT_MSG_TMPL,
+    String msgContent = String.format(PropertiesUtil.getString("commit.message.template"),
         redmineTicketNumber,
         sourceBranch,
         targetBranch,
@@ -142,22 +139,22 @@ public class Merger {
    * If already exits will do:
    *  - Revert: to remove any possible unwanted changes
    *  - Update: to update latest changes from repository
-   * @param targetBranch
+   * @param branchName
    */
-  public void checkoutOrUpdateTargetBranch(String targetBranch) throws Exception {
-    boolean branchDirExists = new File(TEMP_FOLDER + "/" + targetBranch).exists();
+  public void checkoutOrUpdateBranch(String branchName) throws Exception {
+    boolean branchDirExists = new File(TEMP_FOLDER + "/" + branchName).exists();
     if (branchDirExists){
-      revertChanges( targetBranch);
-      String output = updateBranch( targetBranch);
+      revertChanges( branchName);
+      String output = updateBranch( branchName);
       if ( !isSuccessfulUpdate( output)){
         throw new Exception("Error updating working copy");
       }
     } else {
-      String output = checkoutBranch( targetBranch);
+      String output = checkoutBranch( branchName);
       if ( !isSuccessfulCheckout( output)){
         throw new Exception("Error checking out working copy");
       }
-      createLocalConfigFile(targetBranch);
+      createLocalConfigFile(branchName);
     }
   }
 
