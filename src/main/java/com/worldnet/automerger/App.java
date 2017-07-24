@@ -25,19 +25,19 @@ public class App
     static final Logger logger = LogManager.getLogger();
 
     public static void main( String[] args ){
-
+        Merger merger = new Merger();
         String[] branches = StringUtils.split(
             PropertiesUtil.getString("branches.map"), ";");
-        Merger merger = new Merger();
+
         for (int i = 0; i < branches.length; i++) {
             String[] mergeArgs = StringUtils.split(branches[i], ",");
             if(mergeArgs.length != 3){
                 logger.error("Incorrect branches configuration: {}", branches[i]);
-                logger.error("A valid entry must be: sourceBranch,targetBranch,RedmineTaskNumber");
+                logger.error("A valid entry must be: <SOURCE_BRANCH>,<TARGET_BRANCH>,<REDMINE_TICKET>");
                 System.exit(0);
             }
             try {
-                merger.performMerge( mergeArgs[0], mergeArgs[1], mergeArgs[2]);
+                merger.performMerge(mergeArgs[0].trim(), mergeArgs[1].trim(), mergeArgs[2].trim());
             } catch (Exception e) {
                 logger.error(e);
             }

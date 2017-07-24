@@ -62,7 +62,7 @@ public class AppTest
     }
 
     public void testCheckoutOrUpdateTargetBranch() throws Exception {
-        merger.checkoutOrUpdateTargetBranch(TARGET_BRANCH);
+        merger.checkoutOrUpdateBranch(TARGET_BRANCH);
         assertTrue( true);//ok if no exception
     }
 
