@@ -92,4 +92,15 @@ public class Notifier {
         sourceBranch, targetBranch);
     sendEmail(subject, body);
   }
+
+  public static void notifyCssConflictsResolution(String sourceBranch, String targetBranch,
+      int fromRevision, int toRevision, String resolveOutput) {
+    String subject = String.format("[AUTO-MERGER] CSS conflicts resolved (%s -> %s)", sourceBranch, targetBranch);
+    String body = String.format(
+        "There were CSS conflicts automatically resolved during merge from branch %s into %s (-r%s:%s).\n\n" +
+        "Output during conflicts resolution command: \n%s\n\n" +
+        "UI team, please recompile the CSS files and commit them in %s",
+        sourceBranch, targetBranch, fromRevision, toRevision, resolveOutput, targetBranch);
+    sendEmail(subject, body);
+  }
 }

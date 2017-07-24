@@ -32,10 +32,6 @@ import org.apache.logging.log4j.Logger;
  */
 public class Merger {
 
-  private static String SVN_ERROR_PREFIX = "svn: E";
-  private static String TEMP_FOLDER = PropertiesUtil.getString("temp.folder");
-  private static String BASE_REPO = PropertiesUtil.getString("base.repository.path");
-
   static final Logger logger = LogManager.getLogger();
 
   public void performMerge(String sourceBranch, String targetBranch, String redmineTaskNumber) throws Exception {
@@ -52,10 +48,18 @@ public class Merger {
     int toRevision = getToRevision(eligibleRevisions);
     //perform merge
     String mergeOutput = merge( sourceBranch, targetBranch, fromRevision, toRevision);
+    boolean areCssConflictsResolved = false;//used to notify UI team, false by default
+    String resolveConflictOutput = "";
     if ( !isSuccessfulMerge(mergeOutput)){
-      logger.info("Conflicts have been found during merge, no changes will be committed.");
-      Notifier.notifyMergeWithConflicts(sourceBranch, targetBranch, fromRevision, toRevision);
-      return;
+      resolveConflictOutput = ConflictSolver.resolveCssConflicts(targetBranch);
+      areCssConflictsResolved = ConflictSolver.areConflictsResolved(targetBranch);
+      if ( !areCssConflictsResolved) {
+        logger.info("Conflicts have been found during merge, no changes will be committed.");
+        Notifier.notifyMergeWithConflicts(sourceBranch, targetBranch, fromRevision, toRevision);
+        return;
+      } else{
+        logger.info("CSS conflicts have been resolved, UI team will be notified to recompile CSS files");
+      }
     }
     //check if build is ok after merge
     if ( !isBuildSuccessful(targetBranch)) {
@@ -78,6 +82,10 @@ public class Merger {
         logger.info("Logging merged revisions:");
         String mergedRevisions = mergeInfoMergedRevisions( sourceBranch, targetBranch);
         Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision, mergedRevisions);
+        if (areCssConflictsResolved){
+          Notifier.notifyCssConflictsResolution(sourceBranch, targetBranch, fromRevision, toRevision,
+              resolveConflictOutput);
+        }
       } else {
         logger.info("Commit failed! No changes have been committed into repository");
         Notifier.notifyCommitFailure(sourceBranch, targetBranch, fromRevision, toRevision);
@@ -142,7 +150,7 @@ public class Merger {
    * @param branchName
    */
   public void checkoutOrUpdateBranch(String branchName) throws Exception {
-    boolean branchDirExists = new File(TEMP_FOLDER + "/" + branchName).exists();
+    boolean branchDirExists = new File(SvnUtils.TEMP_FOLDER + "/" + branchName).exists();
     if (branchDirExists){
       revertChanges( branchName);
       String output = updateBranch( branchName);
@@ -163,7 +171,7 @@ public class Merger {
    * @param targetBranch
    */
   public void createLocalConfigFile(String targetBranch) throws Exception {
-    String newDirectoryPath = TEMP_FOLDER + "/" + targetBranch + "/localconf/";
+    String newDirectoryPath = SvnUtils.TEMP_FOLDER + "/" + targetBranch + "/localconf/";
     if ( !Files.exists( Paths.get(newDirectoryPath))) {
       Set<PosixFilePermission> permissions = PosixFilePermissions.fromString("rwxrwxrwx");
       FileAttribute<Set<PosixFilePermission>> fileAttributes = PosixFilePermissions
@@ -179,24 +187,24 @@ public class Merger {
 
   public String checkoutBranch(String branchName){
     StringBuilder command = new StringBuilder(
-        String.format( SvnOperationsEnum.CHECKOUT.command(), BASE_REPO + branchName))
-        .append( createSvnCredentials());
+        String.format( SvnOperationsEnum.CHECKOUT.command(), SvnUtils.BASE_REPO + branchName))
+        .append( SvnUtils.createSvnCredentials());
 
-    return CommandExecutor.run(command.toString(), TEMP_FOLDER);
+    return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER);
   }
 
   public String updateBranch(String branchName){
     StringBuilder command = new StringBuilder( SvnOperationsEnum.UPDATE.command())
-        .append( createSvnCredentials());
+        .append( SvnUtils.createSvnCredentials());
 
-    return CommandExecutor.run(command.toString(), TEMP_FOLDER + "/" + branchName);
+    return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER + "/" + branchName);
   }
 
   public String revertChanges(String branchName){
     StringBuilder command = new StringBuilder( SvnOperationsEnum.REVERT.command())
-        .append( createSvnCredentials());
+        .append( SvnUtils.createSvnCredentials());
 
-    return CommandExecutor.run(command.toString(), TEMP_FOLDER + "/" + branchName);
+    return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER + "/" + branchName);
   }
 
   /**
@@ -215,67 +223,49 @@ public class Merger {
         String.format( SvnOperationsEnum.MERGE.command(),
           fromRevision - 1,
           toRevision,
-          BASE_REPO + sourceBranch))
-        .append( createSvnCredentials());
+          SvnUtils.BASE_REPO + sourceBranch))
+        .append( SvnUtils.createSvnCredentials());
 
-    return CommandExecutor.run(command.toString(), TEMP_FOLDER + "/" + targetBranch);
+    return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER + "/" + targetBranch);
   }
 
   public String mergeInfoEligibleRevisions(String sourceBranch, String targetBranch){
     StringBuilder command = new StringBuilder(
         String.format( SvnOperationsEnum.MERGEINFO_ELIGIBLE.command(),
-          BASE_REPO + sourceBranch,
-          BASE_REPO + targetBranch))
-        .append( createSvnCredentials());
+          SvnUtils.BASE_REPO + sourceBranch,
+          SvnUtils.BASE_REPO + targetBranch))
+        .append( SvnUtils.createSvnCredentials());
 
-    return CommandExecutor.run(command.toString(), TEMP_FOLDER);
+    return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER);
   }
 
   public String mergeInfoMergedRevisions(String sourceBranch, String targetBranch){
     StringBuilder command = new StringBuilder(
         String.format( SvnOperationsEnum.MERGEINFO_MERGED.command(),
-            BASE_REPO + sourceBranch,
-            BASE_REPO + targetBranch))
-        .append( createSvnCredentials());
+            SvnUtils.BASE_REPO + sourceBranch,
+            SvnUtils.BASE_REPO + targetBranch))
+        .append( SvnUtils.createSvnCredentials());
 
-    return CommandExecutor.run(command.toString(), TEMP_FOLDER);
+    return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER);
   }
 
   public String commit(String branchName, String messageFilePath){
     StringBuilder command = new StringBuilder(
         String.format( SvnOperationsEnum.COMMIT.command(),
           messageFilePath))
-        .append( createSvnCredentials());
+        .append( SvnUtils.createSvnCredentials());
 
-    return CommandExecutor.run(command.toString(), TEMP_FOLDER + "/" + branchName);
-  }
-
-  /**
-   * Creates the String to include SVN user and password in the command if necessary.
-   * @return
-   */
-  private String createSvnCredentials() {
-    boolean isSvnUsingCredentials =
-        BooleanUtils.toBoolean( PropertiesUtil.getString("svn.enable.password.auth"));
-    String credentials;
-    if (isSvnUsingCredentials){
-      String user = PropertiesUtil.getString("svn.username");
-      String password = PropertiesUtil.getString("svn.password");
-      credentials = String.format(SvnOperationsEnum.SVN_CREDENTIALS, user, password);
-    } else {
-      credentials = "";
-    }
-    return credentials;
+    return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER + "/" + branchName);
   }
 
   public boolean isSuccessfulCheckout(String output){
-    return StringUtils.contains(output, "Checked out revision")
-        && !StringUtils.contains(output, SVN_ERROR_PREFIX);
+    return StringUtils.contains(output, SvnUtils.CHECKED_OUT)
+        && !StringUtils.contains(output, SvnUtils.SVN_ERROR_PREFIX);
   }
 
   public  boolean isSuccessfulUpdate(String output){
-    return StringUtils.contains(output, "revision")
-        && !StringUtils.contains(output, SVN_ERROR_PREFIX);
+    return StringUtils.contains(output, SvnUtils.REVISION)
+        && !StringUtils.contains(output, SvnUtils.SVN_ERROR_PREFIX);
   }
 
   /**
@@ -285,14 +275,14 @@ public class Merger {
    * @return
    */
   public  boolean isSuccessfulMerge(String mergeOutput) {
-    return StringUtils.contains(mergeOutput, "Recording mergeinfo")
-        && !StringUtils.contains(mergeOutput, SVN_ERROR_PREFIX)
-        && !StringUtils.contains(mergeOutput, "Summary of conflicts:");
+    return StringUtils.contains(mergeOutput, SvnUtils.SVN_RECORDED_MERGEINFO)
+        && !StringUtils.contains(mergeOutput, SvnUtils.SVN_ERROR_PREFIX)
+        && !StringUtils.contains(mergeOutput, SvnUtils.SVN_CONFLICTS);
   }
 
   public boolean isSuccessfulCommit(String commitOutput) {
-    return StringUtils.contains(commitOutput, "Committed revision")
-        && !StringUtils.contains(commitOutput, SVN_ERROR_PREFIX);
+    return StringUtils.contains(commitOutput, SvnUtils.COMMITTED_REVISION)
+        && !StringUtils.contains(commitOutput, SvnUtils.SVN_ERROR_PREFIX);
   }
 
   /**
@@ -313,7 +303,7 @@ public class Merger {
    */
   private String runBuildCommand(String branchName){
     String command = "ant compile";
-    return CommandExecutor.run(command, TEMP_FOLDER + "/" + branchName);
+    return CommandExecutor.run(command, SvnUtils.TEMP_FOLDER + "/" + branchName);
   }
 
 }

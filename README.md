@@ -18,6 +18,8 @@ Set up this properties in POM file:
 
 **enable.commit.mode:** if set to false will perform merge but will not commit changes (simulation mode)
 
+**compiled.css.path:** path to identify pre-compiled CSS files and resolve conflicts automatically only on these files.  
+
 ## Execution flow
 
 When a merge is performed between a source and target branch, this is the pseudo-code of the process:

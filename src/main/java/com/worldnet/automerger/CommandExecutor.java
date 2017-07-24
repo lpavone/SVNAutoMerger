@@ -49,12 +49,12 @@ public class CommandExecutor {
     try {
       logger.info(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), command);
       final Process process;
-      if (StringUtils.isNotBlank(pathName)){
-        process = Runtime.getRuntime().exec(command, null, new File(pathName));
-      } else{
-        String[] cmd = { "/bin/sh", "-c", command};
-        process = Runtime.getRuntime().exec(cmd);
-      }
+      String[] cmd = { "/bin/sh", "-c", command};
+      process = Runtime.getRuntime().exec(
+          cmd,
+          null,
+          StringUtils.isNotBlank(pathName) ? new File(pathName) : null);
+
       newFixedThreadPool = Executors.newFixedThreadPool(1);
       Future<String> output = newFixedThreadPool.submit(() ->
         IOUtils.toString( new InputStreamReader(process.getInputStream()))

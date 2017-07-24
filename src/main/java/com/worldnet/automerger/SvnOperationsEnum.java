@@ -23,7 +23,9 @@ public enum SvnOperationsEnum {
   CHECKOUT("svn co %s --force"),
   MERGE("svn merge --non-interactive -r %s:%s %s -x --ignore-eol-style"),
   MERGEINFO_ELIGIBLE("svn mergeinfo --show-revs eligible %s %s"),
-  MERGEINFO_MERGED("svn mergeinfo --show-revs merged %s %s");
+  MERGEINFO_MERGED("svn mergeinfo --show-revs merged %s %s"),
+  STATUS("svn status"),
+  RESOLVE("svn resolve --accept theirs-full %s --non-interactive");
 
   private final String command;
   /**

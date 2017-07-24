@@ -112,6 +112,11 @@ public class AppTest
         assertTrue( true);//ok if no exception
     }
 
+    public void testConflictsResolver(){
+        ConflictSolver.resolveCssConflicts(TARGET_BRANCH);
+        assertTrue( ConflictSolver.areConflictsResolved(TARGET_BRANCH));
+    }
+
     /**
      * Main test case, will try to perform a merge and commit the changes.
      */
