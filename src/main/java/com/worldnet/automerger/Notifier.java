@@ -12,6 +12,7 @@
 
 package com.worldnet.automerger;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -66,12 +67,15 @@ public class Notifier {
   }
 
   public static void notifySuccessfulMerge(String sourceBranch, String targetBranch,
-      int fromRevision, int toRevision, String mergedRevisions) {
+      int fromRevision, int toRevision, String mergedRevisions, String resolveConflictOutput) {
     String subject = String.format("[AUTO-MERGER] Changes have been merged (%s -> %s)", sourceBranch, targetBranch);
     String body = String.format(
-        "Changes have been successfully merged from branch %s into %s (from revision %s to %s).\n"+
+        "Changes have been successfully merged from branch %s into %s (from revision %s to %s).\n\n"+
+        "Output during CSS conflicts resolution:\n%s\n\n"+
         "Current merged revisions:\n\n%s",
-        sourceBranch, targetBranch, fromRevision, toRevision, mergedRevisions);
+        sourceBranch, targetBranch, fromRevision, toRevision,
+        StringUtils.isNotBlank( resolveConflictOutput) ? resolveConflictOutput : "n/a",
+        mergedRevisions);
     sendEmail(subject, body);
   }
 
@@ -93,14 +97,14 @@ public class Notifier {
     sendEmail(subject, body);
   }
 
-  public static void notifyCssConflictsResolution(String sourceBranch, String targetBranch,
-      int fromRevision, int toRevision, String resolveOutput) {
-    String subject = String.format("[AUTO-MERGER] CSS conflicts resolved (%s -> %s)", sourceBranch, targetBranch);
+  public static void notifyCssCompilationFail(String sourceBranch, String targetBranch,
+      int fromRevision, int toRevision, String cssCompilationOutput) {
+    String subject = String.format("[AUTO-MERGER] CSS compilation failed (%s -> %s)", sourceBranch, targetBranch);
     String body = String.format(
-        "There were CSS conflicts automatically resolved during merge from branch %s into %s (-r%s:%s).\n\n" +
-        "Output during conflicts resolution command: \n%s\n\n" +
-        "UI team, please recompile the CSS files and commit them in %s",
-        sourceBranch, targetBranch, fromRevision, toRevision, resolveOutput, targetBranch);
+        "CSS compilation has failed after merge branch %s into %s (from revision %s to %s).\n"+
+            "Changes have not been committed, manual investigation is required.\n\n"+
+            "Output of CSS compilation:\n\n%s",
+        sourceBranch, targetBranch, fromRevision, toRevision, cssCompilationOutput);
     sendEmail(subject, body);
   }
 }

@@ -33,7 +33,15 @@ checkout or update source branch;
 checkout or update target branch;
 perform merge of eligible revisions;
 if( there were conflicts during merge){
-  notify and abort;
+  resolve CSS conflicts;
+  if ( still have conflicts){
+    notify and abort;
+  } else{
+    recompile CSS files;
+    if (CSS compilation failed){
+      notify and abort;
+    }
+  }
 }
 if( not successful build){
   notify and abort;
