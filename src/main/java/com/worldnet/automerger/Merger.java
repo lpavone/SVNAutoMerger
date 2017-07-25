@@ -48,17 +48,24 @@ public class Merger {
     int toRevision = getToRevision(eligibleRevisions);
     //perform merge
     String mergeOutput = merge( sourceBranch, targetBranch, fromRevision, toRevision);
-    boolean areCssConflictsResolved = false;//used to notify UI team, false by default
-    String resolveConflictOutput = "";
+    String resolveConflictOutput = StringUtils.EMPTY;
     if ( !isSuccessfulMerge(mergeOutput)){
       resolveConflictOutput = ConflictSolver.resolveCssConflicts(targetBranch);
-      areCssConflictsResolved = ConflictSolver.areConflictsResolved(targetBranch);
-      if ( !areCssConflictsResolved) {
+      boolean areAllConflictsResolved = ConflictSolver.areConflictsResolved(targetBranch);
+      if ( !areAllConflictsResolved) {
         logger.info("Conflicts have been found during merge, no changes will be committed.");
         Notifier.notifyMergeWithConflicts(sourceBranch, targetBranch, fromRevision, toRevision);
         return;
       } else{
-        logger.info("CSS conflicts have been resolved, UI team will be notified to recompile CSS files");
+        logger.info("CSS conflicts have been resolved, will attempt to recompile CSS files");
+        //run and check result of CSS compilation
+        String cssCompilationOutput = CssCompiler.recompile(targetBranch);
+        if ( CssCompiler.hasCssCompileFailed(cssCompilationOutput)){
+          logger.info("CSS compilation has failed, merge aborted.");
+          Notifier.notifyCssCompilationFail(sourceBranch, targetBranch, fromRevision, toRevision,
+              cssCompilationOutput);
+          return;
+        }
       }
     }
     //check if build is ok after merge
@@ -81,11 +88,8 @@ public class Merger {
         logger.info("Changes have been successfully committed.");
         logger.info("Logging merged revisions:");
         String mergedRevisions = mergeInfoMergedRevisions( sourceBranch, targetBranch);
-        Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision, mergedRevisions);
-        if (areCssConflictsResolved){
-          Notifier.notifyCssConflictsResolution(sourceBranch, targetBranch, fromRevision, toRevision,
-              resolveConflictOutput);
-        }
+        Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision,
+            mergedRevisions, resolveConflictOutput);
       } else {
         logger.info("Commit failed! No changes have been committed into repository");
         Notifier.notifyCommitFailure(sourceBranch, targetBranch, fromRevision, toRevision);
