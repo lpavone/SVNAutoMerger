@@ -10,32 +10,36 @@
  * and exclusive property of Worldnet TPS Ltd.
  */
 
-package com.worldnet.automerger;
+package com.worldnet.automerger.commands;
 
+import com.worldnet.automerger.SvnUtils;
 import org.apache.commons.lang3.StringUtils;
 
 /**
+ * Compile CSS files.
  *
- * @author Leonardo Pavone - 25/07/17.
+ * @author Leonardo Pavone - 26/07/17.
  */
-public class CssCompiler {
+public class CssCompilation extends Command{
 
   private static final String CSS_COMPILER_CMD = "ant styles.compile";
-  /**
-   * Recompile the CSS files.
-   * @param branch where the CSS files are compiled
-   */
-  public static String recompile(String branch) {
+  private String branchName;
 
-    return CommandExecutor.run(
-        CSS_COMPILER_CMD,
-        SvnUtils.TEMP_FOLDER + "/" + branch);
+  public CssCompilation(String branchName) {
+    this.branchName = branchName;
   }
 
-  public static boolean hasCssCompileFailed(String output) {
+  @Override
+  public String execute() {
+    output = CommandExecutor.run(
+        CSS_COMPILER_CMD,
+        SvnUtils.TEMP_FOLDER + "/" + branchName);
+    return output;
+  }
 
-    return StringUtils.contains(output,"Compilation failed")
-        || !StringUtils.contains(output,"BUILD SUCCESSFUL");
-
+  @Override
+  public boolean wasSuccessful() {
+    return !StringUtils.contains(output,"Compilation failed")
+        && StringUtils.contains(output,"BUILD SUCCESSFUL");
   }
 }

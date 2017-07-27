@@ -12,6 +12,18 @@
 
 package com.worldnet.automerger;
 
+import com.worldnet.automerger.commands.BuildCheck;
+import com.worldnet.automerger.commands.CheckoutBranch;
+import com.worldnet.automerger.commands.CommandExecutor;
+import com.worldnet.automerger.commands.Commit;
+import com.worldnet.automerger.commands.ConflictSolver;
+import com.worldnet.automerger.commands.CssCompilation;
+import com.worldnet.automerger.commands.Merge;
+import com.worldnet.automerger.commands.MergeInfoRevisions;
+import com.worldnet.automerger.commands.RevertChanges;
+import com.worldnet.automerger.commands.StatusCheck;
+import com.worldnet.automerger.commands.UpdateBranch;
+import com.worldnet.automerger.notification.Notifier;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -36,31 +48,44 @@ public class Merger {
 
   public void performMerge(String sourceBranch, String targetBranch, String redmineTaskNumber) throws Exception {
     logger.info("Attempting automatic merge of changes from {} to {}", sourceBranch, targetBranch);
-    String eligibleRevisions = mergeInfoEligibleRevisions( sourceBranch, targetBranch);
+
+    String eligibleRevisions =
+        new MergeInfoRevisions( sourceBranch, targetBranch, SvnOperationsEnum.MERGEINFO_ELIGIBLE)
+        .execute();
     if (StringUtils.isBlank( eligibleRevisions)){
       logger.info("No eligible revisions from {} to {}, merge aborted.", sourceBranch, targetBranch);
       Notifier.notifyNoEligibleVersions(sourceBranch, targetBranch);
       return;
     }
+
     checkoutOrUpdateBranch(sourceBranch);
     checkoutOrUpdateBranch(targetBranch);
-    int fromRevision = getFromRevision(eligibleRevisions);
-    int toRevision = getToRevision(eligibleRevisions);
-    //perform merge
-    String mergeOutput = merge( sourceBranch, targetBranch, fromRevision, toRevision);
+
+    int fromRevision = getFromRevision( eligibleRevisions);
+    int toRevision = getToRevision( eligibleRevisions);
+
+    Merge mergeCmd = new Merge(sourceBranch, targetBranch, fromRevision, toRevision);
+    mergeCmd.execute();
     String resolveConflictOutput = StringUtils.EMPTY;
-    if ( !isSuccessfulMerge(mergeOutput)){
-      resolveConflictOutput = ConflictSolver.resolveCssConflicts(targetBranch);
-      boolean areAllConflictsResolved = ConflictSolver.areConflictsResolved(targetBranch);
-      if ( !areAllConflictsResolved) {
+    if ( !mergeCmd.wasSuccessful()){
+      //resolve automatically CSS conflicts to proceed
+      logger.info("Conflicts have been found during merge. Will attempt to resolve CSS conflicts and re-check status.");
+      resolveConflictOutput = new ConflictSolver(targetBranch)
+          .execute();
+      StatusCheck statusCheckCmd = new StatusCheck(targetBranch);
+      String statusOutput = statusCheckCmd.execute();
+      //check if after resolution there are still conflicts
+      if ( !statusCheckCmd.wasSuccessful()) {
         logger.info("Conflicts have been found during merge, no changes will be committed.");
-        Notifier.notifyMergeWithConflicts(sourceBranch, targetBranch, fromRevision, toRevision);
+        Notifier.notifyMergeWithConflicts(sourceBranch, targetBranch, fromRevision, toRevision,
+            statusOutput);
         return;
       } else{
         logger.info("CSS conflicts have been resolved, will attempt to recompile CSS files");
         //run and check result of CSS compilation
-        String cssCompilationOutput = CssCompiler.recompile(targetBranch);
-        if ( CssCompiler.hasCssCompileFailed(cssCompilationOutput)){
+        CssCompilation cssCompilationCmd = new CssCompilation(targetBranch);
+        String cssCompilationOutput = cssCompilationCmd.execute();
+        if ( !cssCompilationCmd.wasSuccessful()){
           logger.info("CSS compilation has failed, merge aborted.");
           Notifier.notifyCssCompilationFail(sourceBranch, targetBranch, fromRevision, toRevision,
               cssCompilationOutput);
@@ -69,11 +94,17 @@ public class Merger {
       }
     }
     //check if build is ok after merge
-    if ( !isBuildSuccessful(targetBranch)) {
-      logger.info("Build has failed after merge, please check logs for details. Changes will not be committed.");
-      Notifier.notifyFailedBuild(sourceBranch, targetBranch, fromRevision, toRevision);
+    BuildCheck buildCheckCmd = new BuildCheck(targetBranch);
+    String buildOutput = buildCheckCmd.execute();
+    if ( !buildCheckCmd.wasSuccessful()) {
+      logger.info("Build has failed after merge. Changes will not be committed.");
+      Notifier.notifyFailedBuild(sourceBranch, targetBranch, fromRevision, toRevision, buildOutput);
       return;
     }
+    String mergedRevisions =
+        new MergeInfoRevisions( sourceBranch, targetBranch, SvnOperationsEnum.MERGEINFO_MERGED)
+        .execute();
+    //commit is only done if mode is enabled from config
     boolean isCommitModeEnabled = BooleanUtils.toBoolean(
         PropertiesUtil.getString("enable.commit.mode"));
     if (isCommitModeEnabled){
@@ -82,22 +113,24 @@ public class Merger {
       createCommitMessageFile( commitMessageFilePath, sourceBranch, targetBranch,
           fromRevision, toRevision, redmineTaskNumber);
       //commit changes
-      String commitOutput = commit( targetBranch, commitMessageFilePath);
-
-      if (isSuccessfulCommit(commitOutput)){
+      Commit commitCmd = new Commit(targetBranch, commitMessageFilePath);
+      String commitOutput = commitCmd.execute();
+      if ( commitCmd.wasSuccessful()){
         logger.info("Changes have been successfully committed.");
-        logger.info("Logging merged revisions:");
-        String mergedRevisions = mergeInfoMergedRevisions( sourceBranch, targetBranch);
+        logger.info("Merged revisions:\n%s", mergedRevisions);
         Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision,
-            mergedRevisions, resolveConflictOutput);
+            mergedRevisions, resolveConflictOutput, false);
       } else {
         logger.info("Commit failed! No changes have been committed into repository");
-        Notifier.notifyCommitFailure(sourceBranch, targetBranch, fromRevision, toRevision);
+        Notifier.notifyCommitFailure(sourceBranch, targetBranch, fromRevision, toRevision,
+            commitOutput);
       }
       Utils.removeTempFile( commitMessageFilePath);
       logger.info("Finished automatic merge of changes from {} to {}", sourceBranch, targetBranch);
     } else {
-      logger.info("Commit mode is disabled, changes have been merged but no commit will be done.");
+      logger.info("Commit mode is disabled, no commit will be done.");
+      Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision,
+          mergedRevisions, resolveConflictOutput, true);
     }
   }
 
@@ -156,14 +189,17 @@ public class Merger {
   public void checkoutOrUpdateBranch(String branchName) throws Exception {
     boolean branchDirExists = new File(SvnUtils.TEMP_FOLDER + "/" + branchName).exists();
     if (branchDirExists){
-      revertChanges( branchName);
-      String output = updateBranch( branchName);
-      if ( !isSuccessfulUpdate( output)){
+      RevertChanges revertChangesCmd = new RevertChanges(branchName);
+      revertChangesCmd.execute();
+      UpdateBranch updateBranchCmd = new UpdateBranch( branchName);
+      updateBranchCmd.execute();
+      if ( !updateBranchCmd.wasSuccessful()){
         throw new Exception("Error updating working copy");
       }
     } else {
-      String output = checkoutBranch( branchName);
-      if ( !isSuccessfulCheckout( output)){
+      CheckoutBranch checkoutBranchCmd = new CheckoutBranch( branchName);
+      checkoutBranchCmd.execute();
+      if ( !checkoutBranchCmd.wasSuccessful()){
         throw new Exception("Error checking out working copy");
       }
       createLocalConfigFile(branchName);
@@ -172,142 +208,29 @@ public class Merger {
 
   /**
    * Create localconf folder and properties file necessary to run build task in order to check merge integrity.
-   * @param targetBranch
+   * @param branchName
    */
-  public void createLocalConfigFile(String targetBranch) throws Exception {
-    String newDirectoryPath = SvnUtils.TEMP_FOLDER + "/" + targetBranch + "/localconf/";
+  public void createLocalConfigFile(String branchName) throws Exception {
+    String branchPath = SvnUtils.TEMP_FOLDER + "/" + branchName;
+    //create localconf directory
+    String newDirectoryPath = branchPath + "/localconf";
     if ( !Files.exists( Paths.get(newDirectoryPath))) {
       Set<PosixFilePermission> permissions = PosixFilePermissions.fromString("rwxrwxrwx");
       FileAttribute<Set<PosixFilePermission>> fileAttributes = PosixFilePermissions
           .asFileAttribute(permissions);
       Files.createDirectory(Paths.get(newDirectoryPath), fileAttributes);
     }
+    //copy properties template
     Files.copy(
-        Paths.get("src/main/resources/worldnettps.properties"),
+        Paths.get(branchPath + "/common/conf/worldnettps.properties.template"),
         Paths.get(newDirectoryPath + "/worldnettps.properties"),
         StandardCopyOption.REPLACE_EXISTING);
-    logger.info("worldnettps.properties file has been copied into localconf folder.");
-  }
-
-  public String checkoutBranch(String branchName){
-    StringBuilder command = new StringBuilder(
-        String.format( SvnOperationsEnum.CHECKOUT.command(), SvnUtils.BASE_REPO + branchName))
-        .append( SvnUtils.createSvnCredentials());
-
-    return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER);
-  }
-
-  public String updateBranch(String branchName){
-    StringBuilder command = new StringBuilder( SvnOperationsEnum.UPDATE.command())
-        .append( SvnUtils.createSvnCredentials());
-
-    return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER + "/" + branchName);
-  }
-
-  public String revertChanges(String branchName){
-    StringBuilder command = new StringBuilder( SvnOperationsEnum.REVERT.command())
-        .append( SvnUtils.createSvnCredentials());
-
-    return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER + "/" + branchName);
-  }
-
-  /**
-   * The fromRevision value is decreased by 1 to meet the requirements of subversion merge command using
-   * revisions range (-r [--revision] ARG ).
-   * i.e.: if eligible revisions are
-   * r4709
-   * r4711
-   * r4712
-   * then the range argument must be "-r4708:4712".
-   *
-   * Only decreasing the number here to leave the email notifications having the correct number.
-   */
-  public String merge(String sourceBranch, String targetBranch, int fromRevision, int toRevision){
-    StringBuilder command = new StringBuilder(
-        String.format( SvnOperationsEnum.MERGE.command(),
-          fromRevision - 1,
-          toRevision,
-          SvnUtils.BASE_REPO + sourceBranch))
-        .append( SvnUtils.createSvnCredentials());
-
-    return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER + "/" + targetBranch);
-  }
-
-  public String mergeInfoEligibleRevisions(String sourceBranch, String targetBranch){
-    StringBuilder command = new StringBuilder(
-        String.format( SvnOperationsEnum.MERGEINFO_ELIGIBLE.command(),
-          SvnUtils.BASE_REPO + sourceBranch,
-          SvnUtils.BASE_REPO + targetBranch))
-        .append( SvnUtils.createSvnCredentials());
-
-    return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER);
-  }
-
-  public String mergeInfoMergedRevisions(String sourceBranch, String targetBranch){
-    StringBuilder command = new StringBuilder(
-        String.format( SvnOperationsEnum.MERGEINFO_MERGED.command(),
-            SvnUtils.BASE_REPO + sourceBranch,
-            SvnUtils.BASE_REPO + targetBranch))
-        .append( SvnUtils.createSvnCredentials());
-
-    return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER);
-  }
-
-  public String commit(String branchName, String messageFilePath){
-    StringBuilder command = new StringBuilder(
-        String.format( SvnOperationsEnum.COMMIT.command(),
-          messageFilePath))
-        .append( SvnUtils.createSvnCredentials());
-
-    return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER + "/" + branchName);
-  }
-
-  public boolean isSuccessfulCheckout(String output){
-    return StringUtils.contains(output, SvnUtils.CHECKED_OUT)
-        && !StringUtils.contains(output, SvnUtils.SVN_ERROR_PREFIX);
-  }
-
-  public  boolean isSuccessfulUpdate(String output){
-    return StringUtils.contains(output, SvnUtils.REVISION)
-        && !StringUtils.contains(output, SvnUtils.SVN_ERROR_PREFIX);
-  }
-
-  /**
-   * Check if merge was successful based on command output.
-   * Any kind of error or conflict is considered not successful.
-   * @param mergeOutput
-   * @return
-   */
-  public  boolean isSuccessfulMerge(String mergeOutput) {
-    return StringUtils.contains(mergeOutput, SvnUtils.SVN_RECORDED_MERGEINFO)
-        && !StringUtils.contains(mergeOutput, SvnUtils.SVN_ERROR_PREFIX)
-        && !StringUtils.contains(mergeOutput, SvnUtils.SVN_CONFLICTS);
-  }
-
-  public boolean isSuccessfulCommit(String commitOutput) {
-    return StringUtils.contains(commitOutput, SvnUtils.COMMITTED_REVISION)
-        && !StringUtils.contains(commitOutput, SvnUtils.SVN_ERROR_PREFIX);
-  }
-
-  /**
-   * Run the ANT task to compile the project and check results.
-   *
-   * @return <code>true</code> if build is successful, <code>false</code> if it's failed.
-   */
-  public boolean isBuildSuccessful(String branchName){
-    String buildOutput = runBuildCommand(branchName);
-    return StringUtils.contains(buildOutput,"BUILD SUCCESSFUL") &&
-        !StringUtils.contains(buildOutput,"BUILD FAILED");
-  }
-
-  /**
-   * Run the command the check if the build is ok.
-   * @param branchName branch name were the build is executed
-   * @return the command's output
-   */
-  private String runBuildCommand(String branchName){
-    String command = "ant compile";
-    return CommandExecutor.run(command, SvnUtils.TEMP_FOLDER + "/" + branchName);
+    //setting glassfish directory in properties file
+    String appServerDir = PropertiesUtil.getString("appserver.dir");
+    String sedCommand = String.format(
+        "sed -i '/glassfish.dir/c\\glassfish.dir=%s' localconf/worldnettps.properties", appServerDir);
+    CommandExecutor.run( sedCommand, branchPath);
+    logger.info("worldnettps.properties file has been created in localconf folder.");
   }
 
 }

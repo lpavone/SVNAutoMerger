@@ -1,5 +1,15 @@
 package com.worldnet.automerger;
 
+import com.worldnet.automerger.commands.BuildCheck;
+import com.worldnet.automerger.commands.CheckoutBranch;
+import com.worldnet.automerger.commands.Commit;
+import com.worldnet.automerger.commands.ConflictSolver;
+import com.worldnet.automerger.commands.Merge;
+import com.worldnet.automerger.commands.MergeInfoRevisions;
+import com.worldnet.automerger.commands.RevertChanges;
+import com.worldnet.automerger.commands.StatusCheck;
+import com.worldnet.automerger.commands.UpdateBranch;
+import com.worldnet.automerger.notification.Notifier;
 import java.io.IOException;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -41,24 +51,31 @@ public class AppTest
     }
 
     public void testCheckout() {
-        String output = merger.checkoutBranch(SOURCE_BRANCH);
-        assertTrue( merger.isSuccessfulCheckout(output));
+        CheckoutBranch cmd = new CheckoutBranch(SOURCE_BRANCH);
+        cmd.execute();
+        assertTrue( cmd.wasSuccessful());
     }
 
     public void testUpdate() {
-        String output = merger.updateBranch(SOURCE_BRANCH);
-        assertTrue( merger.isSuccessfulUpdate(output));
+        UpdateBranch cmd = new UpdateBranch(SOURCE_BRANCH);
+        cmd.execute();
+        assertTrue( cmd.wasSuccessful());
     }
 
     public void testRevert() {
-        String output = merger.revertChanges(TARGET_BRANCH);
-        assertTrue( true);//ok if no exception
+        RevertChanges cmd = new RevertChanges(TARGET_BRANCH);
+        cmd.execute();
+        assertTrue( cmd.wasSuccessful());
     }
 
     public void testMergeInfo() {
-        merger.mergeInfoEligibleRevisions(SOURCE_BRANCH, TARGET_BRANCH);
-        merger.mergeInfoMergedRevisions(SOURCE_BRANCH, TARGET_BRANCH);
-        assertTrue( true);//ok if no exception
+        MergeInfoRevisions cmdElig = new MergeInfoRevisions(SOURCE_BRANCH, TARGET_BRANCH,
+            SvnOperationsEnum.MERGEINFO_ELIGIBLE);
+        cmdElig.execute();
+        MergeInfoRevisions cmdMerged = new MergeInfoRevisions(SOURCE_BRANCH, TARGET_BRANCH,
+            SvnOperationsEnum.MERGEINFO_MERGED);
+        cmdMerged.execute();
+        assertTrue(cmdElig.wasSuccessful() && cmdMerged.wasSuccessful());
     }
 
     public void testCheckoutOrUpdateTargetBranch() throws Exception {
@@ -68,10 +85,8 @@ public class AppTest
 
     public void testMerge() {
         setRevisionsRange();
-        String output = merger.updateBranch(TARGET_BRANCH);
-        assertTrue( merger.isSuccessfulUpdate(output));
-        String output2 = merger.merge(SOURCE_BRANCH, TARGET_BRANCH, fromRev, toRev);
-        assertTrue( merger.isSuccessfulMerge(output2));//ok if no exception
+        Merge cmd = new Merge(SOURCE_BRANCH, TARGET_BRANCH, fromRev, toRev);
+        assertTrue( cmd.wasSuccessful());
     }
 
     public void testCommitMessageFileCreation() throws IOException {
@@ -80,31 +95,39 @@ public class AppTest
     }
 
     public void testCommit(){
-        String output = merger.commit(TARGET_BRANCH, COMMIT_MSG_FILE_PATH);
-        assertTrue( merger.isSuccessfulCommit(output));
+        Commit cmd = new Commit(TARGET_BRANCH, COMMIT_MSG_FILE_PATH);
+        assertTrue( cmd.wasSuccessful());
     }
 
     private void setRevisionsRange(){
-        String eligibleRevisions = merger.mergeInfoEligibleRevisions(SOURCE_BRANCH, TARGET_BRANCH);
+        MergeInfoRevisions cmdElig = new MergeInfoRevisions(SOURCE_BRANCH, TARGET_BRANCH,
+            SvnOperationsEnum.MERGEINFO_ELIGIBLE);
+        String eligibleRevisions = cmdElig.execute();
         if (StringUtils.isNotBlank(eligibleRevisions)){
             fromRev = merger.getFromRevision(eligibleRevisions);
             toRev = merger.getToRevision(eligibleRevisions);
         } else {
             Assert.fail("No Eligible Revisions");
         }
-
     }
 
     public void testBuild(){
-        boolean result = merger.isBuildSuccessful(TARGET_BRANCH);
-        assertTrue( result);
+        BuildCheck cmd = new BuildCheck(TARGET_BRANCH);
+        assertTrue( cmd.wasSuccessful());
     }
 
     public void testEmailNotification(){
-        Notifier.notifyFailedBuild(SOURCE_BRANCH, TARGET_BRANCH,
-            38, 45);//, "r38\nr39\nr40\nr45");
-        Notifier.notifyCommitFailure(SOURCE_BRANCH, TARGET_BRANCH,
-            38, 45);//, "r38\nr39\nr40\nr45");
+//        Notifier.notifyCommitFailure(SOURCE_BRANCH, TARGET_BRANCH, 23, 30,
+//            "commit output...");
+//        Notifier.notifyFailedBuild(SOURCE_BRANCH, TARGET_BRANCH, 38, 45,
+//            "<buildOutputHere>");
+//        Notifier.notifyCssCompilationFail(SOURCE_BRANCH, TARGET_BRANCH, 38, 45,
+//            "output.....");
+//        Notifier.notifyMergeWithConflicts(SOURCE_BRANCH, TARGET_BRANCH, 38, 45);
+//        Notifier.notifyNoEligibleVersions(SOURCE_BRANCH, TARGET_BRANCH);
+        Notifier.notifySuccessfulMerge(SOURCE_BRANCH, TARGET_BRANCH, 38, 45,
+            "merged revisions output...", "resolve conflicts output",
+            false);
     }
 
     public void testCopyPropertiesFile() throws Exception {
@@ -113,8 +136,11 @@ public class AppTest
     }
 
     public void testConflictsResolver(){
-        ConflictSolver.resolveCssConflicts(TARGET_BRANCH);
-        assertTrue( ConflictSolver.areConflictsResolved(TARGET_BRANCH));
+        ConflictSolver cmd = new ConflictSolver(TARGET_BRANCH);
+        cmd.execute();
+        StatusCheck stCmd = new StatusCheck(TARGET_BRANCH);
+        stCmd.execute();
+        assertTrue( stCmd.wasSuccessful());
     }
 
     /**

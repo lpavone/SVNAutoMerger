@@ -34,6 +34,25 @@
         </configuration>
         <version>3.6.1</version>
       </plugin>
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.4.3</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <transformers>
+            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+              <mainClass>com.worldnet.automerger.App</mainClass>
+            </transformer>
+          </transformers>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
@@ -46,7 +65,7 @@
     <temp.folder>/tmp</temp.folder>
     <tmp.commit.message.file>/tmp/commit_msg</tmp.commit.message.file>
     <!-- Base path of remote SVN repository. -->
-    <base.repository.path>file:///var/lib/svn/myrepo/branch/</base.repository.path>
+    <base.repository.path>xxxxxx</base.repository.path>
     <!--true: enforce SVN authentication using username and password for any SVN operation.
         false: a public key authentication will be used. -->
     <svn.enable.password.auth>false</svn.enable.password.auth>
@@ -56,15 +75,17 @@
     and the Redmine task number where the changes will be committed.
       i.e.: VERSION_4_4_0_0,VERSION_4_5_0_0,9999 -->
     <branches.map>VERSION_4_4_0_0,VERSION_4_5_0_0,9999</branches.map>
-    <email.sender>aaaa</email.sender>
-    <email.to.notify>aaaa</email.to.notify>
-    <!-- Enable/disable commit feature -->
+    <email.sender>x@xxxx.com</email.sender>
+    <email.to.notify>x@xxxx.com,x@xxxx.com</email.to.notify>
+    <!-- Enable/disable commit feature: false will not commit changes -->
     <enable.commit.mode>false</enable.commit.mode>
     <commit.message.template>
       Feature #%s - Merge changes from %s into %s%n%n* [AUTO-MERGE] Revisions merged: -r%s:%s%n%nrefs #%s @00h05m
     </commit.message.template>
     <!-- Path to find compiled CSS files to resolve conflicts automatically -->
     <compiled.css.path>webapp/web/templates/*/commoncss/*.css</compiled.css.path>
+    <!-- Application server modules are necessary for build -->
+    <appserver.dir>/home/leonardo/glassfish4.1</appserver.dir>
   </properties>
 
   <dependencies>
