@@ -10,7 +10,7 @@
  * and exclusive property of Worldnet TPS Ltd.
  */
 
-package com.worldnet.automerger;
+package com.worldnet.automerger.commands;
 
 import java.io.File;
 import java.io.InputStreamReader;
@@ -42,7 +42,7 @@ public class CommandExecutor {
    * @param pathName path where the command should be executed
    * @return command's output
    */
-  static String run(String command, String pathName) {
+  public static String run(String command, String pathName) {
 
     ExecutorService newFixedThreadPool = null;
 
