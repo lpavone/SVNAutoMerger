@@ -91,7 +91,7 @@ public class Notifier {
     if (isCommitModeDisabled){
       body.append("\n\n******* AS 'commitMode' IS DISABLED, THIS IS A SIMULATION, NO CHANGES WILL BE COMMITTED. *******");
     } else{
-      body.append("\n\n******* CHANGES WERE COMMITTED! *******");
+      body.append("\n\n******* CHANGES HAVE BEEN COMMITTED! *******");
     }
     sendEmail(subject, body.toString());
   }
