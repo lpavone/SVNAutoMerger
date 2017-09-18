@@ -101,9 +101,6 @@ public class Merger {
       Notifier.notifyFailedBuild(sourceBranch, targetBranch, fromRevision, toRevision, buildOutput);
       return;
     }
-    String mergedRevisions =
-        new MergeInfoRevisions( sourceBranch, targetBranch, SvnOperationsEnum.MERGEINFO_MERGED)
-        .execute();
     //commit is only done if mode is enabled from config
     boolean isCommitModeEnabled = BooleanUtils.toBoolean(
         PropertiesUtil.getString("enable.commit.mode"));
@@ -116,6 +113,9 @@ public class Merger {
       Commit commitCmd = new Commit(targetBranch, commitMessageFilePath);
       String commitOutput = commitCmd.execute();
       if ( commitCmd.wasSuccessful()){
+        String mergedRevisions =
+            new MergeInfoRevisions( sourceBranch, targetBranch, SvnOperationsEnum.MERGEINFO_MERGED)
+                .execute();
         logger.info("Changes have been successfully committed.");
         logger.info("Merged revisions:\n%s", mergedRevisions);
         Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision,
@@ -130,7 +130,7 @@ public class Merger {
     } else {
       logger.info("Commit mode is disabled, no commit will be done.");
       Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision,
-          mergedRevisions, resolveConflictOutput, true);
+          "[commit disabled]", resolveConflictOutput, true);
     }
   }
 
