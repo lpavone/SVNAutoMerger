@@ -16,11 +16,16 @@ Set up this properties in POM file:
 
 **base.repository.path:** base path of remote SVN repository.
 
-**enable.commit.mode:** if set to false will perform merge but will not commit changes (simulation mode)
+**svn.enable.password.auth:** "true" if SVN authentication is done using user/password. If "false" it's
+authenticated using a public key.
+
+**branches.map:** set the branches to be merged.
+
+**enable.commit.mode:** if set to false will perform merge but will not commit changes (simulation mode).
 
 **compiled.css.path:** path to identify pre-compiled CSS files and resolve conflicts automatically only on these files.
 
-**appserver.dir:** path to application server. Used to check build after merge.  
+**appserver.dir:** path to application server. Used to check build and compile after merge.
 
 ## Execution flow
 
