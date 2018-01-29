@@ -28,11 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
-import java.util.Set;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -212,24 +207,10 @@ public class Merger {
    */
   public void createLocalConfigFile(String branchName) throws Exception {
     String branchPath = SvnUtils.TEMP_FOLDER + "/" + branchName;
-    //create localconf directory
-    String newDirectoryPath = branchPath + "/localconf";
-    if ( !Files.exists( Paths.get(newDirectoryPath))) {
-      Set<PosixFilePermission> permissions = PosixFilePermissions.fromString("rwxrwxrwx");
-      FileAttribute<Set<PosixFilePermission>> fileAttributes = PosixFilePermissions
-          .asFileAttribute(permissions);
-      Files.createDirectory(Paths.get(newDirectoryPath), fileAttributes);
-    }
-    //copy properties template
-    Files.copy(
-        Paths.get(branchPath + "/common/conf/worldnettps.properties.template"),
-        Paths.get(newDirectoryPath + "/worldnettps.properties"),
-        StandardCopyOption.REPLACE_EXISTING);
-    //setting glassfish directory in properties file
-    String appServerDir = PropertiesUtil.getString("appserver.dir");
-    String sedCommand = String.format(
-        "sed -i '/glassfish.dir/c\\glassfish.dir=%s' localconf/worldnettps.properties", appServerDir);
-    CommandExecutor.run( sedCommand, branchPath);
+    //run script to set up project
+    String scriptSetupPath = PropertiesUtil.getString("script.setup.path");
+    String scriptCommand = String.format("%s %s", scriptSetupPath, branchName);
+    CommandExecutor.run( scriptCommand, branchPath);
     logger.info("worldnettps.properties file has been created in localconf folder.");
   }
 

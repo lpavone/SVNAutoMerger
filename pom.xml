@@ -85,7 +85,8 @@
     <!-- Path to find compiled CSS files to resolve conflicts automatically -->
     <compiled.css.path>webapp/web/templates/*/commoncss/*.css</compiled.css.path>
     <!-- Application server modules are necessary for build -->
-    <appserver.dir>/home/leonardo/glassfish4.1</appserver.dir>
+    <appserver.dir>/home/leonardo/wildfly-11.0.0.Final</appserver.dir>
+    <script.setup.path>/home/lpavone/Automerger/scripts/setup</script.setup.path>
   </properties>
 
   <dependencies>
