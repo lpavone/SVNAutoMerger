@@ -33,6 +33,7 @@ public class CommandExecutor {
 
   static final Logger logger = LogManager.getLogger();
   private static final String CMD_LOG_TMPL = ":{}$ {}";
+  private static final int COMMAND_TIMEOUT_MINS = 10;
 
   private CommandExecutor(){}
 
@@ -63,7 +64,7 @@ public class CommandExecutor {
         IOUtils.toString( new InputStreamReader(process.getErrorStream()))
       );
 
-      if (!process.waitFor(3, TimeUnit.MINUTES)) {
+      if (!process.waitFor(COMMAND_TIMEOUT_MINS, TimeUnit.MINUTES)) {
         logger.info("Destroy process, it's been hanged out for more than 3 minutes!");
         process.destroy();
       }
