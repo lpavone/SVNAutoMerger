@@ -28,6 +28,8 @@ public class SvnUtils {
   public static final String CHECKED_OUT = "Checked out revision";
   public static final String TEMP_FOLDER = PropertiesUtil.getString("temp.folder");
   public static final String BASE_REPO = PropertiesUtil.getString("base.repository.path");
+  public static final String SVN_ERROR_MSG_BRANCH_NOT_FOUND = "E160013";
+
 
   /**
    * Creates the String to include SVN user and password in the command if necessary.

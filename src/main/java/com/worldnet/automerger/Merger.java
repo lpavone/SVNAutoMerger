@@ -41,7 +41,7 @@ public class Merger {
 
   static final Logger logger = LogManager.getLogger();
 
-  public void performMerge(String sourceBranch, String targetBranch, String redmineTaskNumber) throws Exception {
+  public MergeResult performMerge(String sourceBranch, String targetBranch, String redmineTaskNumber) throws Exception {
     logger.info("Attempting automatic merge of changes from {} to {}", sourceBranch, targetBranch);
 
     String eligibleRevisions =
@@ -50,7 +50,12 @@ public class Merger {
     if (StringUtils.isBlank( eligibleRevisions)){
       logger.info("No eligible revisions from {} to {}, merge aborted.", sourceBranch, targetBranch);
       Notifier.notifyNoEligibleVersions(sourceBranch, targetBranch);
-      return;
+      return MergeResult.NO_ELIGIBLE_REVISIONS;
+
+    } else if(StringUtils.contains(eligibleRevisions, SvnUtils.SVN_ERROR_PREFIX) &&
+        StringUtils.contains(eligibleRevisions, SvnUtils.SVN_ERROR_MSG_BRANCH_NOT_FOUND)){
+      logger.error("Branch not found.");
+      return MergeResult.BRANCH_NOT_FOUND;
     }
 
     checkoutOrUpdateBranch(sourceBranch);
@@ -74,7 +79,7 @@ public class Merger {
         logger.info("Conflicts have been found during merge, no changes will be committed.");
         Notifier.notifyMergeWithConflicts(sourceBranch, targetBranch, fromRevision, toRevision,
             statusOutput);
-        return;
+        return MergeResult.CONFLICTS;
       } else{
         logger.info("CSS conflicts have been resolved, will attempt to recompile CSS files");
         //run and check result of CSS compilation
@@ -84,7 +89,7 @@ public class Merger {
           logger.info("CSS compilation has failed, merge aborted.");
           Notifier.notifyCssCompilationFail(sourceBranch, targetBranch, fromRevision, toRevision,
               cssCompilationOutput);
-          return;
+          return MergeResult.CSS_COMPILATION_FAILED;
         }
       }
     }
@@ -94,7 +99,7 @@ public class Merger {
     if ( !buildCheckCmd.wasSuccessful()) {
       logger.info("Build has failed after merge. Changes will not be committed.");
       Notifier.notifyFailedBuild(sourceBranch, targetBranch, fromRevision, toRevision, buildOutput);
-      return;
+      return MergeResult.BUILD_FAILED;
     }
     //commit is only done if mode is enabled from config
     boolean isCommitModeEnabled = BooleanUtils.toBoolean(
@@ -107,6 +112,7 @@ public class Merger {
       //commit changes
       Commit commitCmd = new Commit(targetBranch, commitMessageFilePath);
       String commitOutput = commitCmd.execute();
+      MergeResult result;
       if ( commitCmd.wasSuccessful()){
         String mergedRevisions =
             new MergeInfoRevisions( sourceBranch, targetBranch, SvnOperationsEnum.MERGEINFO_MERGED)
@@ -115,17 +121,24 @@ public class Merger {
         logger.info("Merged revisions:\n%s", mergedRevisions);
         Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision,
             mergedRevisions, resolveConflictOutput, false);
+        result = MergeResult.MERGED_OK;
+
       } else {
         logger.info("Commit failed! No changes have been committed into repository");
         Notifier.notifyCommitFailure(sourceBranch, targetBranch, fromRevision, toRevision,
             commitOutput);
+        result = MergeResult.COMMIT_FAILED;
+
       }
       Utils.removeTempFile( commitMessageFilePath);
       logger.info("Finished automatic merge of changes from {} to {}", sourceBranch, targetBranch);
+      return result;
+
     } else {
       logger.info("Commit mode is disabled, no commit will be done.");
       Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision,
           "[commit disabled]", resolveConflictOutput, true);
+      return MergeResult.MERGED_SIMULATION_OK;
     }
   }
 

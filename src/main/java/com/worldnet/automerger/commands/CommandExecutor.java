@@ -65,15 +65,16 @@ public class CommandExecutor {
       );
 
       if (!process.waitFor(COMMAND_TIMEOUT_MINS, TimeUnit.MINUTES)) {
-        logger.info("Destroy process, it's been hanged out for more than 3 minutes!");
+        logger.info(
+            String.format("Destroy process, it's been hanged out for more than %s minutes!",
+            COMMAND_TIMEOUT_MINS));
         process.destroy();
       }
       logger.info(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), output.get());
       if (StringUtils.isNotBlank(error.get())){
         logger.error(CMD_LOG_TMPL,  Optional.ofNullable(pathName).orElse(""), error.get());
       }
-
-      return output.get();
+      return StringUtils.isNotBlank(output.get()) ? output.get() : error.get();
 
     } catch (Exception e) {
       logger.error("Error executing command: " + command, e);
