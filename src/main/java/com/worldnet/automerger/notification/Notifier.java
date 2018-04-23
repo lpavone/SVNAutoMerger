@@ -13,6 +13,7 @@
 package com.worldnet.automerger.notification;
 
 import com.worldnet.automerger.PropertiesUtil;
+import com.worldnet.automerger.SvnUtils;
 import com.worldnet.automerger.commands.CommandExecutor;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -47,7 +48,7 @@ public class Notifier {
           emailTempFileContent,
           PropertiesUtil.getString("email.to.notify")
       );
-      CommandExecutor.run( sendMailCommand, null);
+      CommandExecutor.run( sendMailCommand, SvnUtils.TEMP_FOLDER);
 
     } catch (Exception e) {
       logger.error("Email notification has failed", e);
