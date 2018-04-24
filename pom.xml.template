@@ -1,0 +1,117 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.worldnet.automerger</groupId>
+  <artifactId>automerger</artifactId>
+  <version>1.0</version>
+  <packaging>jar</packaging>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>properties-maven-plugin</artifactId>
+        <version>1.0.0</version>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>write-project-properties</goal>
+            </goals>
+            <configuration>
+              <outputFile>${project.build.outputDirectory}/config.properties</outputFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+        </configuration>
+        <version>3.6.1</version>
+      </plugin>
+      <plugin>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.4.3</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <transformers>
+            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+              <mainClass>com.worldnet.automerger.App</mainClass>
+            </transformer>
+          </transformers>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <name>automerger</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Directory used to checkout the branches and store merge result. -->
+    <temp.folder>/tmp</temp.folder>
+    <tmp.commit.message.file>/home/leonardo/temp/commit_msg</tmp.commit.message.file>
+    <!-- Base path of remote SVN repository. -->
+    <base.repository.path>xxxxxxxxx</base.repository.path>
+    <!--true: enforce SVN authentication using username and password for any SVN operation.
+        false: a public key authentication will be used. -->
+    <svn.enable.password.auth>false</svn.enable.password.auth>
+    <svn.username>xxxxxxx</svn.username>
+    <svn.password>xxxxxx</svn.password>
+    <!-- Branches configuration: the value must a comma separated String indicating source branch, target branch,
+    and the Redmine task number where the changes will be committed.
+      i.e.: VERSION_4_4_0_0,VERSION_4_5_0_0,9999 -->
+    <branches.map>VERSION_5_1_0_2,VERSION_5_2_0_0,10220</branches.map>
+    <email.sender>dev@XXXX.com</email.sender>
+    <email.to.notify>XXX@XXXX.com</email.to.notify>
+    <!-- Enable/disable commit feature: false will not commit changes -->
+    <enable.commit.mode>false</enable.commit.mode>
+    <commit.message.template>
+      Feature #%s - Merge changes from %s into %s%n%n* [AUTO-MERGE] Revisions merged: -r%s:%s%n%nrefs #%s @00h00m
+    </commit.message.template>
+    <!-- Path to find compiled CSS files to resolve conflicts automatically -->
+    <compiled.css.path>webapp/web/templates/*/commoncss/*.css</compiled.css.path>
+    <!-- Application server modules are necessary for build -->
+    <appserver.dir>/home/leonardo/wildfly-11.0.0.Final</appserver.dir>
+    <script.setup.path>/home/lpavone/Automerger/scripts/setup</script.setup.path>
+    <email.template.path>/home/lpavone/mail.tpl</email.template.path>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>2.8.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>2.8.2</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.0</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>
