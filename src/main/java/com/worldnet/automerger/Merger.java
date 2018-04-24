@@ -34,197 +34,196 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- *
  * @author Leonardo Pavone - 11/07/17.
  */
 public class Merger {
 
-  static final Logger logger = LogManager.getLogger();
+    static final Logger logger = LogManager.getLogger();
 
-  public MergeResult performMerge(String sourceBranch, String targetBranch, String redmineTaskNumber) throws Exception {
-    logger.info("Attempting automatic merge of changes from {} to {}", sourceBranch, targetBranch);
+    public MergeResult performMerge(String sourceBranch, String targetBranch,
+        String redmineTaskNumber) throws Exception {
+        logger.info("Attempting automatic merge of changes from {} to {}", sourceBranch,
+            targetBranch);
 
-    String eligibleRevisions =
-        new MergeInfoRevisions( sourceBranch, targetBranch, SvnOperationsEnum.MERGEINFO_ELIGIBLE)
-        .execute();
-    if (StringUtils.isBlank( eligibleRevisions)){
-      logger.info("No eligible revisions from {} to {}, merge aborted.", sourceBranch, targetBranch);
-      Notifier.notifyNoEligibleVersions(sourceBranch, targetBranch);
-      return MergeResult.NO_ELIGIBLE_REVISIONS;
-
-    } else if(StringUtils.contains(eligibleRevisions, SvnUtils.SVN_ERROR_PREFIX) &&
-        StringUtils.contains(eligibleRevisions, SvnUtils.SVN_ERROR_MSG_BRANCH_NOT_FOUND)){
-      logger.error("Branch not found.");
-      return MergeResult.BRANCH_NOT_FOUND;
-    }
-
-    checkoutOrUpdateBranch(sourceBranch);
-    checkoutOrUpdateBranch(targetBranch);
-
-    int fromRevision = getFromRevision( eligibleRevisions);
-    int toRevision = getToRevision( eligibleRevisions);
-
-    Merge mergeCmd = new Merge(sourceBranch, targetBranch, fromRevision, toRevision);
-    mergeCmd.execute();
-    String resolveConflictOutput = StringUtils.EMPTY;
-    if ( !mergeCmd.wasSuccessful()){
-      //resolve automatically CSS conflicts to proceed
-      logger.info("Conflicts have been found during merge. Will attempt to resolve CSS conflicts and re-check status.");
-      resolveConflictOutput = new ConflictSolver(targetBranch)
-          .execute();
-      StatusCheck statusCheckCmd = new StatusCheck(targetBranch);
-      String statusOutput = statusCheckCmd.execute();
-      //check if after resolution there are still conflicts
-      if ( !statusCheckCmd.wasSuccessful()) {
-        logger.info("Conflicts have been found during merge, no changes will be committed.");
-        Notifier.notifyMergeWithConflicts(sourceBranch, targetBranch, fromRevision, toRevision,
-            statusOutput);
-        return MergeResult.CONFLICTS;
-      } else{
-        logger.info("CSS conflicts have been resolved, will attempt to recompile CSS files");
-        //run and check result of CSS compilation
-        CssCompilation cssCompilationCmd = new CssCompilation(targetBranch);
-        String cssCompilationOutput = cssCompilationCmd.execute();
-        if ( !cssCompilationCmd.wasSuccessful()){
-          logger.info("CSS compilation has failed, merge aborted.");
-          Notifier.notifyCssCompilationFail(sourceBranch, targetBranch, fromRevision, toRevision,
-              cssCompilationOutput);
-          return MergeResult.CSS_COMPILATION_FAILED;
-        }
-      }
-    }
-    //check if build is ok after merge
-    BuildCheck buildCheckCmd = new BuildCheck(targetBranch);
-    String buildOutput = buildCheckCmd.execute();
-    if ( !buildCheckCmd.wasSuccessful()) {
-      logger.info("Build has failed after merge. Changes will not be committed.");
-      Notifier.notifyFailedBuild(sourceBranch, targetBranch, fromRevision, toRevision, buildOutput);
-      return MergeResult.BUILD_FAILED;
-    }
-    //commit is only done if mode is enabled from config
-    boolean isCommitModeEnabled = BooleanUtils.toBoolean(
-        PropertiesUtil.getString("enable.commit.mode"));
-    if (isCommitModeEnabled){
-      logger.info("Successful merge, changes will be committed in Redmine task #{}", redmineTaskNumber);
-      String commitMessageFilePath = PropertiesUtil.getString("tmp.commit.message.file");
-      createCommitMessageFile( commitMessageFilePath, sourceBranch, targetBranch,
-          fromRevision, toRevision, redmineTaskNumber);
-      //commit changes
-      Commit commitCmd = new Commit(targetBranch, commitMessageFilePath);
-      String commitOutput = commitCmd.execute();
-      MergeResult result;
-      if ( commitCmd.wasSuccessful()){
-        String mergedRevisions =
-            new MergeInfoRevisions( sourceBranch, targetBranch, SvnOperationsEnum.MERGEINFO_MERGED)
+        String eligibleRevisions =
+            new MergeInfoRevisions(sourceBranch, targetBranch, SvnOperationsEnum.MERGEINFO_ELIGIBLE)
                 .execute();
-        logger.info("Changes have been successfully committed.");
-        logger.info("Merged revisions:\n%s", mergedRevisions);
-        Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision,
-            mergedRevisions, resolveConflictOutput, false);
-        result = MergeResult.MERGED_OK;
+        if (StringUtils.isBlank(eligibleRevisions)) {
+            logger.info("No eligible revisions from {} to {}, merge aborted.", sourceBranch,
+                targetBranch);
+            Notifier.notifyNoEligibleVersions(sourceBranch, targetBranch);
+            return MergeResult.NO_ELIGIBLE_REVISIONS;
 
-      } else {
-        logger.info("Commit failed! No changes have been committed into repository");
-        Notifier.notifyCommitFailure(sourceBranch, targetBranch, fromRevision, toRevision,
-            commitOutput);
-        result = MergeResult.COMMIT_FAILED;
+        } else if (StringUtils.contains(eligibleRevisions, SvnUtils.SVN_ERROR_PREFIX) &&
+            StringUtils.contains(eligibleRevisions, SvnUtils.SVN_ERROR_MSG_BRANCH_NOT_FOUND)) {
+            logger.error("Branch not found.");
+            return MergeResult.BRANCH_NOT_FOUND;
+        }
 
-      }
-      Utils.removeTempFile( commitMessageFilePath);
-      logger.info("Finished automatic merge of changes from {} to {}", sourceBranch, targetBranch);
-      return result;
+        checkoutOrUpdateBranch(sourceBranch);
+        checkoutOrUpdateBranch(targetBranch);
 
-    } else {
-      logger.info("Commit mode is disabled, no commit will be done.");
-      Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision,
-          "[commit disabled]", resolveConflictOutput, true);
-      return MergeResult.MERGED_SIMULATION_OK;
+        int fromRevision = getFromRevision(eligibleRevisions);
+        int toRevision = getToRevision(eligibleRevisions);
+
+        Merge mergeCmd = new Merge(sourceBranch, targetBranch, fromRevision, toRevision);
+        mergeCmd.execute();
+        String resolveConflictOutput = StringUtils.EMPTY;
+        if (!mergeCmd.wasSuccessful()) {
+            //resolve automatically CSS conflicts to proceed
+            logger.info(
+                "Conflicts have been found during merge. Will attempt to resolve CSS conflicts and re-check status.");
+            resolveConflictOutput = new ConflictSolver(targetBranch)
+                .execute();
+            StatusCheck statusCheckCmd = new StatusCheck(targetBranch);
+            String statusOutput = statusCheckCmd.execute();
+            //check if after resolution there are still conflicts
+            if (!statusCheckCmd.wasSuccessful()) {
+                logger
+                    .info("Conflicts have been found during merge, no changes will be committed.");
+                Notifier
+                    .notifyMergeWithConflicts(sourceBranch, targetBranch, fromRevision, toRevision,
+                        statusOutput);
+                return MergeResult.CONFLICTS;
+            } else {
+                logger
+                    .info("CSS conflicts have been resolved, will attempt to recompile CSS files");
+                //run and check result of CSS compilation
+                CssCompilation cssCompilationCmd = new CssCompilation(targetBranch);
+                String cssCompilationOutput = cssCompilationCmd.execute();
+                if (!cssCompilationCmd.wasSuccessful()) {
+                    logger.info("CSS compilation has failed, merge aborted.");
+                    Notifier.notifyCssCompilationFail(sourceBranch, targetBranch, fromRevision,
+                        toRevision,
+                        cssCompilationOutput);
+                    return MergeResult.CSS_COMPILATION_FAILED;
+                }
+            }
+        }
+        //check if build is ok after merge
+        BuildCheck buildCheckCmd = new BuildCheck(targetBranch);
+        String buildOutput = buildCheckCmd.execute();
+        if (!buildCheckCmd.wasSuccessful()) {
+            logger.info("Build has failed after merge. Changes will not be committed.");
+            Notifier.notifyFailedBuild(sourceBranch, targetBranch, fromRevision, toRevision,
+                buildOutput);
+            return MergeResult.BUILD_FAILED;
+        }
+        //commit is only done if mode is enabled from config
+        boolean isCommitModeEnabled = BooleanUtils.toBoolean(
+            PropertiesUtil.getString("enable.commit.mode"));
+        if (isCommitModeEnabled) {
+            logger.info("Successful merge, changes will be committed in Redmine task #{}",
+                redmineTaskNumber);
+            String commitMessageFilePath = PropertiesUtil.getString("tmp.commit.message.file");
+            createCommitMessageFile(commitMessageFilePath, sourceBranch, targetBranch,
+                fromRevision, toRevision, redmineTaskNumber);
+            //commit changes
+            Commit commitCmd = new Commit(targetBranch, commitMessageFilePath);
+            String commitOutput = commitCmd.execute();
+            MergeResult result;
+            if (commitCmd.wasSuccessful()) {
+                String mergedRevisions =
+                    new MergeInfoRevisions(sourceBranch, targetBranch,
+                        SvnOperationsEnum.MERGEINFO_MERGED)
+                        .execute();
+                logger.info("Changes have been successfully committed.");
+                logger.info("Merged revisions:\n%s", mergedRevisions);
+                Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision,
+                    mergedRevisions, resolveConflictOutput, false);
+                result = MergeResult.MERGED_OK;
+
+            } else {
+                logger.info("Commit failed! No changes have been committed into repository");
+                Notifier.notifyCommitFailure(sourceBranch, targetBranch, fromRevision, toRevision,
+                    commitOutput);
+                result = MergeResult.COMMIT_FAILED;
+
+            }
+            Utils.removeTempFile(commitMessageFilePath);
+            logger.info("Finished automatic merge of changes from {} to {}", sourceBranch,
+                targetBranch);
+            return result;
+
+        } else {
+            logger.info("Commit mode is disabled, no commit will be done.");
+            Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision,
+                "[commit disabled]", resolveConflictOutput, true);
+            return MergeResult.MERGED_SIMULATION_OK;
+        }
     }
-  }
 
-  /**
-   * Creates a temp file with commit message content.
-   * @param commitMessageFilePath
-   * @param sourceBranch
-   * @param targetBranch
-   * @param fromRevision
-   * @param toRevision
-   * @param redmineTicketNumber
-   * @throws IOException
-   */
-  public void createCommitMessageFile(String commitMessageFilePath, String sourceBranch,
-      String targetBranch, int fromRevision, int toRevision, String redmineTicketNumber)
-      throws IOException {
+    /**
+     * Creates a temp file with commit message content.
+     */
+    public void createCommitMessageFile(String commitMessageFilePath, String sourceBranch,
+        String targetBranch, int fromRevision, int toRevision, String redmineTicketNumber)
+        throws IOException {
 
-    String msgContent = String.format(PropertiesUtil.getString("commit.message.template"),
-        redmineTicketNumber,
-        sourceBranch,
-        targetBranch,
-        fromRevision,
-        toRevision,
-        redmineTicketNumber);
+        String msgContent = String.format(PropertiesUtil.getString("commit.message.template"),
+            redmineTicketNumber,
+            sourceBranch,
+            targetBranch,
+            fromRevision,
+            toRevision,
+            redmineTicketNumber);
 
-    Files.write(Paths.get(commitMessageFilePath), msgContent.getBytes());
-  }
-
-  /**
-   * Return last revision to merge
-   * @param eligibleRevisions
-   * @return
-   */
-  public int getToRevision(String eligibleRevisions) {
-    String[] revisions = StringUtils.split(eligibleRevisions, System.getProperty("line.separator"));
-    return Integer.parseInt(StringUtils.remove( revisions[revisions.length - 1], "r"));
-  }
-
-  /**
-   * Return initial revision to merge
-   * @param eligibleRevisions 
-   * @return
-   */
-  public int getFromRevision(String eligibleRevisions) {
-    String revision = StringUtils.split(eligibleRevisions, System.getProperty("line.separator"))[0];
-    return Integer.parseInt(StringUtils.remove(revision, "r"));
-  }
-
-  /**
-   * Checkout the working copy of target branch.
-   * If already exits will do:
-   *  - Revert: to remove any possible unwanted changes
-   *  - Update: to update latest changes from repository
-   * @param branchName
-   */
-  public void checkoutOrUpdateBranch(String branchName) throws Exception {
-    boolean branchDirExists = new File(SvnUtils.TEMP_FOLDER + "/" + branchName).exists();
-    if (branchDirExists){
-      RevertChanges revertChangesCmd = new RevertChanges(branchName);
-      revertChangesCmd.execute();
-      UpdateBranch updateBranchCmd = new UpdateBranch( branchName);
-      updateBranchCmd.execute();
-      if ( !updateBranchCmd.wasSuccessful()){
-        throw new Exception("Error updating working copy");
-      }
-    } else {
-      CheckoutBranch checkoutBranchCmd = new CheckoutBranch( branchName);
-      checkoutBranchCmd.execute();
-      if ( !checkoutBranchCmd.wasSuccessful()){
-        throw new Exception("Error checking out working copy");
-      }
-      createLocalConfigFile(branchName);
+        Files.write(Paths.get(commitMessageFilePath), msgContent.getBytes());
     }
-  }
 
-  /**
-   * Create localconf folder and properties file necessary to run build task in order to check merge integrity.
-   * @param branchName
-   */
-  public void createLocalConfigFile(String branchName) throws Exception {
-    String branchPath = SvnUtils.TEMP_FOLDER + "/" + branchName;
-    //run script to set up project
-    String scriptSetupPath = PropertiesUtil.getString("script.setup.path");
-    String scriptCommand = String.format("%s %s", scriptSetupPath, branchName);
-    CommandExecutor.run( scriptCommand, branchPath);
-    logger.info("worldnettps.properties file has been created in localconf folder.");
-  }
+    /**
+     * Return last revision to merge
+     */
+    public int getToRevision(String eligibleRevisions) {
+        String[] revisions = StringUtils
+            .split(eligibleRevisions, System.getProperty("line.separator"));
+        return Integer.parseInt(StringUtils.remove(revisions[revisions.length - 1], "r"));
+    }
+
+    /**
+     * Return initial revision to merge
+     */
+    public int getFromRevision(String eligibleRevisions) {
+        String revision = StringUtils
+            .split(eligibleRevisions, System.getProperty("line.separator"))[0];
+        return Integer.parseInt(StringUtils.remove(revision, "r"));
+    }
+
+    /**
+     * Checkout the working copy of target branch. If already exits will do: - Revert: to remove any
+     * possible unwanted changes - Update: to update latest changes from repository
+     */
+    public void checkoutOrUpdateBranch(String branchName) throws Exception {
+        boolean branchDirExists = new File(SvnUtils.TEMP_FOLDER + "/" + branchName).exists();
+        if (branchDirExists) {
+            RevertChanges revertChangesCmd = new RevertChanges(branchName);
+            revertChangesCmd.execute();
+            UpdateBranch updateBranchCmd = new UpdateBranch(branchName);
+            updateBranchCmd.execute();
+            if (!updateBranchCmd.wasSuccessful()) {
+                throw new Exception("Error updating working copy");
+            }
+        } else {
+            CheckoutBranch checkoutBranchCmd = new CheckoutBranch(branchName);
+            checkoutBranchCmd.execute();
+            if (!checkoutBranchCmd.wasSuccessful()) {
+                throw new Exception("Error checking out working copy");
+            }
+            createLocalConfigFile(branchName);
+        }
+    }
+
+    /**
+     * Create localconf folder and properties file necessary to run build task in order to check
+     * merge integrity.
+     */
+    public void createLocalConfigFile(String branchName) throws Exception {
+        String branchPath = SvnUtils.TEMP_FOLDER + "/" + branchName;
+        //run script to set up project
+        String scriptSetupPath = PropertiesUtil.getString("script.setup.path");
+        String scriptCommand = String.format("%s %s", scriptSetupPath, branchName);
+        CommandExecutor.run(scriptCommand, branchPath);
+        logger.info("worldnettps.properties file has been created in localconf folder.");
+    }
 
 }

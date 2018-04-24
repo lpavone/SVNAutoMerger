@@ -31,56 +31,58 @@ import org.apache.logging.log4j.core.util.IOUtils;
  */
 public class CommandExecutor {
 
-  static final Logger logger = LogManager.getLogger();
-  private static final String CMD_LOG_TMPL = ":{}$ {}";
-  private static final int COMMAND_TIMEOUT_MINS = 10;
+    static final Logger logger = LogManager.getLogger();
+    private static final String CMD_LOG_TMPL = ":{}$ {}";
+    private static final int COMMAND_TIMEOUT_MINS = 10;
 
-  private CommandExecutor(){}
-
-  /**
-   * Execute a command from specified path
-   * @param command command to be executed
-   * @param pathName path where the command should be executed
-   * @return command's output
-   */
-  public static String run(String command, String pathName) {
-
-    ExecutorService newFixedThreadPool = null;
-
-    try {
-      logger.info(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), command);
-      final Process process;
-      String[] cmd = { "/bin/sh", "-c", command};
-      process = Runtime.getRuntime().exec(
-          cmd,
-          null,
-          StringUtils.isNotBlank(pathName) ? new File(pathName) : null);
-
-      newFixedThreadPool = Executors.newFixedThreadPool(1);
-      Future<String> output = newFixedThreadPool.submit(() ->
-        IOUtils.toString( new InputStreamReader(process.getInputStream()))
-      );
-      Future<String> error = newFixedThreadPool.submit(() ->
-        IOUtils.toString( new InputStreamReader(process.getErrorStream()))
-      );
-
-      if (!process.waitFor(COMMAND_TIMEOUT_MINS, TimeUnit.MINUTES)) {
-        logger.info(
-            String.format("Destroy process, it's been hanged out for more than %s minutes!",
-            COMMAND_TIMEOUT_MINS));
-        process.destroy();
-      }
-      logger.info(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), output.get());
-      if (StringUtils.isNotBlank(error.get())){
-        logger.error(CMD_LOG_TMPL,  Optional.ofNullable(pathName).orElse(""), error.get());
-      }
-      return StringUtils.isNotBlank(output.get()) ? output.get() : error.get();
-
-    } catch (Exception e) {
-      logger.error("Error executing command: " + command, e);
-    } finally {
-      Optional.ofNullable(newFixedThreadPool).ifPresent(ExecutorService::shutdown);
+    private CommandExecutor() {
     }
-    return StringUtils.EMPTY;
-  }
+
+    /**
+     * Execute a command from specified path
+     *
+     * @param command command to be executed
+     * @param pathName path where the command should be executed
+     * @return command's output
+     */
+    public static String run(String command, String pathName) {
+
+        ExecutorService newFixedThreadPool = null;
+
+        try {
+            logger.info(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), command);
+            final Process process;
+            String[] cmd = {"/bin/sh", "-c", command};
+            process = Runtime.getRuntime().exec(
+                cmd,
+                null,
+                StringUtils.isNotBlank(pathName) ? new File(pathName) : null);
+
+            newFixedThreadPool = Executors.newFixedThreadPool(1);
+            Future<String> output = newFixedThreadPool.submit(() ->
+                IOUtils.toString(new InputStreamReader(process.getInputStream()))
+            );
+            Future<String> error = newFixedThreadPool.submit(() ->
+                IOUtils.toString(new InputStreamReader(process.getErrorStream()))
+            );
+
+            if (!process.waitFor(COMMAND_TIMEOUT_MINS, TimeUnit.MINUTES)) {
+                logger.info(
+                    String.format("Destroy process, it's been hanged out for more than %s minutes!",
+                        COMMAND_TIMEOUT_MINS));
+                process.destroy();
+            }
+            logger.info(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), output.get());
+            if (StringUtils.isNotBlank(error.get())) {
+                logger.error(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), error.get());
+            }
+            return StringUtils.isNotBlank(output.get()) ? output.get() : error.get();
+
+        } catch (Exception e) {
+            logger.error("Error executing command: " + command, e);
+        } finally {
+            Optional.ofNullable(newFixedThreadPool).ifPresent(ExecutorService::shutdown);
+        }
+        return StringUtils.EMPTY;
+    }
 }
