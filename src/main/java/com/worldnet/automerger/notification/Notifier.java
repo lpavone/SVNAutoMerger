@@ -31,7 +31,7 @@ public class Notifier {
   static final Logger logger = LogManager.getLogger();
   private static final String EMAIL_TMPL_CMD = "sendmail -t < %s";
   private static final String EMAIL_TMPL_CONTENT =
-      "From: Dev Team <%s>\nTo: %s\nSubject: %s\n%s";
+      "From: Dev Team <%s>\nTo: %s\nSubject: %s\nContent-Type: text/html\n\n%s";
 
     private static void sendEmail(String emailSubject, String emailBody) {
         logger.info("About to notify DEV and QA teams...");
