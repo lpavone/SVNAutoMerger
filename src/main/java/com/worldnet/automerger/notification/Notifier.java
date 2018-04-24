@@ -69,9 +69,9 @@ public class Notifier {
             .format("[AUTO-MERGER] Conflicts have been found during merge (%s -> %s)",
                 sourceBranch, targetBranch);
         String body = String.format(
-            "Conflicts have been found attempting to merge branch <mark>%s</mark> into <mark>%s</mark> "
-                + "(from revision <mark>%s</mark> to <mark>%s</mark>), manual merge is required." +
-                "</br></br>*** SVN STATUS OUTPUT:***</br>%s",
+            "<p>Conflicts have been found attempting to merge branch <mark>%s</mark> into <mark>%s</mark> "
+                + "(from revision <mark>%s</mark> to <mark>%s</mark>), manual merge is required.</p>" +
+                "\n\n************************************ SVN STATUS OUTPUT: ************************************\n%s",
             sourceBranch, targetBranch, fromRevision, toRevision, statusOutput);
         sendEmail(subject, body);
     }
@@ -82,9 +82,9 @@ public class Notifier {
         String subject = String
             .format("[AUTO-MERGER] Error during commit (%s -> %s)", sourceBranch, targetBranch);
         String body = String.format(
-            "Error attempting to commit merge result of branch <mark>%s</mark> into <mark>%s</mark> "
-                + "(from revision <mark>%s</mark> to <mark>%s</mark>), manual merge is required." +
-                "</br></br>*** COMMIT OUTPUT:***</br>%s",
+            "<p>Error attempting to commit merge result of branch <mark>%s</mark> into <mark>%s</mark> "
+                + "(from revision <mark>%s</mark> to <mark>%s</mark>), manual merge is required.</p>" +
+                "\n\n************************************ COMMIT OUTPUT:************************************\n%s",
             sourceBranch, targetBranch, fromRevision, toRevision, commitOutput);
         sendEmail(subject, body);
     }
@@ -98,9 +98,9 @@ public class Notifier {
         StringBuilder body = new StringBuilder(
             String
                 .format("<p>Changes have been successfully merged from branch <mark>%s</mark> into "
-                        + "<mark>%s</mark> (from revision <mark>%s</mark> to <mark>%s</mark>).</p></br></br>"
-                        + "Output during CSS conflicts resolution: </br><p>%s</p></br></br>"
-                        + "Current merged revisions: </br><p>%s</p>",
+                        + "<mark>%s</mark> (from revision <mark>%s</mark> to <mark>%s</mark>).</p>\n\n"
+                        + "<p>Output during CSS conflicts resolution: \n</p>%s\n\n"
+                        + "<p>Current merged revisions: \n</p>%s",
                     sourceBranch, targetBranch, fromRevision, toRevision,
                     StringUtils.isNotBlank(resolveConflictOutput) ? resolveConflictOutput : "n/a",
                     mergedRevisions
@@ -108,9 +108,9 @@ public class Notifier {
         );
         if (isCommitModeDisabled) {
             body.append(
-                "</br></br>******* AS 'commitMode' IS DISABLED, THIS IS A SIMULATION, NO CHANGES WILL BE COMMITTED. *******");
+                "\n\n******* AS 'commitMode' IS DISABLED, THIS IS A SIMULATION, NO CHANGES WILL BE COMMITTED. *******");
         } else {
-            body.append("</br></br>******* CHANGES HAVE BEEN COMMITTED! *******");
+            body.append("\n\n******* CHANGES HAVE BEEN COMMITTED! *******");
         }
         sendEmail(subject, body.toString());
     }
@@ -120,10 +120,10 @@ public class Notifier {
         String subject = String
             .format("[AUTO-MERGER] Broken build (%s -> %s)", sourceBranch, targetBranch);
         String body = String.format(
-            "Build is broken after attempt merging branch <mark>%s</mark> into <mark>%s</mark> "
-                + "(from revision <mark>%s</mark> to <mark>%s</mark>).</br>" +
-                "Changes have not been committed, manual investigation is required.</br></br>" +
-                "****** BUILD OUTPUT: ******</br>%s",
+            "<p>Build is broken after attempt merging branch <mark>%s</mark> into <mark>%s</mark> "
+                + "(from revision <mark>%s</mark> to <mark>%s</mark>).\n" +
+                "Changes have not been committed, manual investigation is required.</p>\n\n" +
+                "*************************************** BUILD OUTPUT: ***************************************\n%s",
             sourceBranch, targetBranch, fromRevision, toRevision, buildOutput);
         sendEmail(subject, body);
     }
@@ -132,7 +132,7 @@ public class Notifier {
         String subject = String
             .format("[AUTO-MERGER] No merge required (%s -> %s)", sourceBranch, targetBranch);
         String body = String.format(
-            "There are no eligible revisions to merge from branch <mark>%s</mark> into <mark>%s</mark>.",
+            "<p>There are no eligible revisions to merge from branch <mark>%s</mark> into <mark>%s</mark>.</p>",
             sourceBranch, targetBranch);
         sendEmail(subject, body);
     }
@@ -142,10 +142,10 @@ public class Notifier {
         String subject = String
             .format("[AUTO-MERGER] CSS compilation failed (%s -> %s)", sourceBranch, targetBranch);
         String body = String.format(
-            "CSS compilation has failed after merge branch <mark>%s</mark> into <mark>%s</mark>"
-                + " (from revision <mark>%s</mark> to <mark>%s</mark>).</br>" +
-                "Changes have not been committed, manual investigation is required.</br></br>" +
-                "****** Output of CSS compilation: ****** </br>%s",
+            "<p>CSS compilation has failed after merge branch <mark>%s</mark> into <mark>%s</mark>"
+                + " (from revision <mark>%s</mark> to <mark>%s</mark>).\n" +
+                "Changes have not been committed, manual investigation is required.</p>\n\n" +
+                "*************************************** Output of CSS compilation: *************************************** \n%s",
             sourceBranch, targetBranch, fromRevision, toRevision, cssCompilationOutput);
         sendEmail(subject, body);
     }
