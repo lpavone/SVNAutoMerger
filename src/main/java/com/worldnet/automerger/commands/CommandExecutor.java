@@ -17,14 +17,10 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Optional;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.util.IOUtils;
 
 /**
  * Executor of command line orders.
@@ -37,9 +33,12 @@ public class CommandExecutor {
     private static final String CMD_LOG_TMPL = ":{}$ {}";
     private static final int COMMAND_TIMEOUT_MINS = 10;
     private static final String HTML_LINE_BREAK = "</br>";
+    private static final String PLAIN_LINE_BREAK = "\n";
+    private static final String SENDMAIL = "sendmail";
 
     private CommandExecutor() {
     }
+
 
     /**
      * Execute a command from specified path
@@ -50,8 +49,6 @@ public class CommandExecutor {
      */
     public static String run(String command, String pathName) {
 
-        ExecutorService newFixedThreadPool = null;
-
         try {
             logger.info(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), command);
             final Process process;
@@ -61,8 +58,13 @@ public class CommandExecutor {
                 null,
                 StringUtils.isNotBlank(pathName) ? new File(pathName) : null);
 
-            String output = getCommandOutput(new InputStreamReader(process.getInputStream()));
-            String errorOutput = getCommandOutput(new InputStreamReader(process.getErrorStream()));
+            boolean isHTMLOutput = command.startsWith(SENDMAIL);
+            String output = getCommandOutput(
+                new InputStreamReader(process.getInputStream()),
+                isHTMLOutput);
+            String errorOutput = getCommandOutput(
+                new InputStreamReader(process.getErrorStream()),
+                isHTMLOutput);
 
             if (!process.waitFor(COMMAND_TIMEOUT_MINS, TimeUnit.MINUTES)) {
                 logger.info(
@@ -78,22 +80,18 @@ public class CommandExecutor {
 
         } catch (Exception e) {
             logger.error("Error executing command: " + command, e);
-        } finally {
-            Optional.ofNullable(newFixedThreadPool).ifPresent(ExecutorService::shutdown);
         }
         return StringUtils.EMPTY;
     }
 
-    private static String getCommandOutput(Reader reader){
+    private static String getCommandOutput(Reader reader, boolean isHTMLOutput){
         try (BufferedReader in = new BufferedReader(reader)){
             String line;
             StringBuilder outputContent = new StringBuilder();
-
+            String lineBreak = isHTMLOutput ? HTML_LINE_BREAK : PLAIN_LINE_BREAK;
             while ((line = in.readLine()) != null) {
-                System.out.println(line + HTML_LINE_BREAK);
-                outputContent
-                    .append(line)
-                    .append(HTML_LINE_BREAK);
+                outputContent.append(line);
+                outputContent.append(lineBreak);
             }
             in.close();
             return outputContent.toString();

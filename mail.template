@@ -261,7 +261,7 @@ ul.sidebar li a h1,ul.sidebar li a h2,ul.sidebar li a h3,ul.sidebar li a h4,ul.s
                                             <tbody>
                                               <tr>
                                                 <td align="center" style="border-bottom: 1px dashed #aaaaaa;"><h5 class="">
-<p>
+<p style="font-family:'Lucida Console', monospace">
 ${body}
 </p>
 </h5></td>
