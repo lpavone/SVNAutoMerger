@@ -12,8 +12,10 @@
 
 package com.worldnet.automerger.commands;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -34,6 +36,7 @@ public class CommandExecutor {
     static final Logger logger = LogManager.getLogger();
     private static final String CMD_LOG_TMPL = ":{}$ {}";
     private static final int COMMAND_TIMEOUT_MINS = 10;
+    private static final String HTML_LINE_BREAK = "</br>";
 
     private CommandExecutor() {
     }
@@ -58,13 +61,8 @@ public class CommandExecutor {
                 null,
                 StringUtils.isNotBlank(pathName) ? new File(pathName) : null);
 
-            newFixedThreadPool = Executors.newFixedThreadPool(1);
-            Future<String> output = newFixedThreadPool.submit(() ->
-                IOUtils.toString(new InputStreamReader(process.getInputStream()))
-            );
-            Future<String> error = newFixedThreadPool.submit(() ->
-                IOUtils.toString(new InputStreamReader(process.getErrorStream()))
-            );
+            String output = getCommandOutput(new InputStreamReader(process.getInputStream()));
+            String errorOutput = getCommandOutput(new InputStreamReader(process.getErrorStream()));
 
             if (!process.waitFor(COMMAND_TIMEOUT_MINS, TimeUnit.MINUTES)) {
                 logger.info(
@@ -72,11 +70,11 @@ public class CommandExecutor {
                         COMMAND_TIMEOUT_MINS));
                 process.destroy();
             }
-            logger.info(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), output.get());
-            if (StringUtils.isNotBlank(error.get())) {
-                logger.error(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), error.get());
+            logger.info(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), output);
+            if (StringUtils.isNotBlank(errorOutput)) {
+                logger.error(CMD_LOG_TMPL, Optional.ofNullable(pathName).orElse(""), errorOutput);
             }
-            return StringUtils.isNotBlank(output.get()) ? output.get() : error.get();
+            return StringUtils.isNotBlank(output) ? output : errorOutput;
 
         } catch (Exception e) {
             logger.error("Error executing command: " + command, e);
@@ -84,5 +82,25 @@ public class CommandExecutor {
             Optional.ofNullable(newFixedThreadPool).ifPresent(ExecutorService::shutdown);
         }
         return StringUtils.EMPTY;
+    }
+
+    private static String getCommandOutput(Reader reader){
+        try (BufferedReader in = new BufferedReader(reader)){
+            String line;
+            StringBuilder outputContent = new StringBuilder();
+
+            while ((line = in.readLine()) != null) {
+                System.out.println(line + HTML_LINE_BREAK);
+                outputContent
+                    .append(line)
+                    .append(HTML_LINE_BREAK);
+            }
+            in.close();
+            return outputContent.toString();
+        }
+        catch (Exception e) {
+            logger.error(e);
+            return null;
+        }
     }
 }
