@@ -260,11 +260,11 @@ ul.sidebar li a h1,ul.sidebar li a h2,ul.sidebar li a h3,ul.sidebar li a h4,ul.s
                                           <table width="100%" border="0" cellspacing="10" cellpadding="10">
                                             <tbody>
                                               <tr>
-                                                <td align="center" style="border-bottom: 1px dashed #aaaaaa;"><h5 class="">
-<p style="font-family:'Lucida Console', monospace">
+                                                <td align="left" style="border-bottom: 1px dashed #aaaaaa;">
+<pre style="font-family:'Lucida Console', monospace; font-size: 11px">
 ${body}
-</p>
-</h5></td>
+</pre>
+</td>
                                               </tr>
                                             </tbody>
                                           </table>
