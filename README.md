@@ -8,7 +8,7 @@ Tool to merge branches automatically.
 
 ## Configuration
 
-Set up this properties in POM file:
+Set up this properties in POM file (pom.xml.template must be update, merge properties if needed):
 
 **temp.folder:** directory used to checkout the branches and store merge result.
 
