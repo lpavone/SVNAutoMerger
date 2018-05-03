@@ -4,6 +4,7 @@ import com.worldnet.automerger.commands.BuildCheck;
 import com.worldnet.automerger.commands.CheckoutBranch;
 import com.worldnet.automerger.commands.Commit;
 import com.worldnet.automerger.commands.ConflictSolver;
+import com.worldnet.automerger.commands.LastRevisionLog;
 import com.worldnet.automerger.commands.Merge;
 import com.worldnet.automerger.commands.MergeInfoRevisions;
 import com.worldnet.automerger.commands.RevertChanges;
@@ -24,8 +25,8 @@ public class AppTest
     extends TestCase
 {
 
-    private static String SOURCE_BRANCH = "VERSION_4_4_0_0";
-    private static String TARGET_BRANCH = "VERSION_4_5_0_0";
+    private static String SOURCE_BRANCH = "VERSION_6_0_0_0";
+    private static String TARGET_BRANCH = "VERSION_5_2_0_0";
     private static String COMMIT_MSG_FILE_PATH = PropertiesUtil.getString("tmp.commit.message.file");
     private Merger merger = new Merger();
 
@@ -125,9 +126,10 @@ public class AppTest
 //            "output.....");
 //        Notifier.notifyMergeWithConflicts(SOURCE_BRANCH, TARGET_BRANCH, 38, 45);
 //        Notifier.notifyNoEligibleVersions(SOURCE_BRANCH, TARGET_BRANCH);
+        String lastRevisionLog = new LastRevisionLog(TARGET_BRANCH).execute();
         Notifier.notifySuccessfulMerge(SOURCE_BRANCH, TARGET_BRANCH, 38, 45,
             "merged revisions output...", "resolve conflicts output",
-            false);
+            false, null);
     }
 
     public void testCopyPropertiesFile() throws Exception {

@@ -25,7 +25,8 @@ public enum SvnOperationsEnum {
   MERGEINFO_ELIGIBLE("svn mergeinfo --show-revs eligible %s %s"),
   MERGEINFO_MERGED("svn mergeinfo --show-revs merged %s %s"),
   STATUS("svn status"),
-  RESOLVE("svn resolve --accept theirs-full %s --non-interactive");
+  RESOLVE("svn resolve --accept theirs-full %s --non-interactive"),
+  LAST_REVISION_LOG("svn log -l 1 -v");
 
   private final String command;
   /**

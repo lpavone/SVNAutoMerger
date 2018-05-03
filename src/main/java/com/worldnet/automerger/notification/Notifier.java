@@ -17,8 +17,6 @@ import com.worldnet.automerger.SvnUtils;
 import com.worldnet.automerger.commands.CommandExecutor;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -91,17 +89,19 @@ public class Notifier {
 
     public static void notifySuccessfulMerge(String sourceBranch, String targetBranch,
         int fromRevision, int toRevision, String mergedRevisions, String resolveConflictOutput,
-        boolean isCommitModeDisabled) {
+        boolean isCommitModeDisabled, String lastRevisionLog) {
         String subject = String
             .format("[AUTO-MERGER] Changes have been merged (%s -> %s)", sourceBranch,
                 targetBranch);
         StringBuilder body = new StringBuilder(
             String
                 .format("<p>Changes have been successfully merged from branch <mark>%s</mark> into "
-                        + "<mark>%s</mark> (from revision <mark>%s</mark> to <mark>%s</mark>).</p>\n\n"
-                        + "<p>Output during CSS conflicts resolution: \n</p>%s\n\n"
-                        + "<p>Current merged revisions: \n</p>%s",
+                        + "<mark>%s</mark> (from revision <mark>%s</mark> to <mark>%s</mark>).</p>\n"
+                        + "<p><b>Files committed:</b> \n</p>%s\n"
+                        + "<p><b>Output during CSS conflicts resolution:</b> \n</p>%s\n"
+                        + "<p><b>Current merged revisions:</b> \n</p>%s",
                     sourceBranch, targetBranch, fromRevision, toRevision,
+                    StringUtils.isNotBlank(lastRevisionLog) ? lastRevisionLog : StringUtils.EMPTY,
                     StringUtils.isNotBlank(resolveConflictOutput) ? resolveConflictOutput : "n/a",
                     mergedRevisions
                 )

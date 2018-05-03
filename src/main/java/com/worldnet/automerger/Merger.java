@@ -18,6 +18,7 @@ import com.worldnet.automerger.commands.CommandExecutor;
 import com.worldnet.automerger.commands.Commit;
 import com.worldnet.automerger.commands.ConflictSolver;
 import com.worldnet.automerger.commands.CssCompilation;
+import com.worldnet.automerger.commands.LastRevisionLog;
 import com.worldnet.automerger.commands.Merge;
 import com.worldnet.automerger.commands.MergeInfoRevisions;
 import com.worldnet.automerger.commands.RevertChanges;
@@ -127,10 +128,14 @@ public class Merger {
                     new MergeInfoRevisions(sourceBranch, targetBranch,
                         SvnOperationsEnum.MERGEINFO_MERGED)
                         .execute();
+                String lastRevisionLog = new LastRevisionLog(targetBranch).execute();
+
                 logger.info("Changes have been successfully committed.");
+                logger.info("Last revision:\n%s\n", lastRevisionLog);
                 logger.info("Merged revisions:\n%s", mergedRevisions);
+
                 Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision,
-                    mergedRevisions, resolveConflictOutput, false);
+                    mergedRevisions, resolveConflictOutput, false, lastRevisionLog);
                 result = MergeResult.MERGED_OK;
 
             } else {
@@ -148,7 +153,7 @@ public class Merger {
         } else {
             logger.info("Commit mode is disabled, no commit will be done.");
             Notifier.notifySuccessfulMerge(sourceBranch, targetBranch, fromRevision, toRevision,
-                "[commit disabled]", resolveConflictOutput, true);
+                "[commit disabled]", resolveConflictOutput, true, null);
             return MergeResult.MERGED_SIMULATION_OK;
         }
     }
