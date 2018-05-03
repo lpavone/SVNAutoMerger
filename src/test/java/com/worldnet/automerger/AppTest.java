@@ -129,7 +129,7 @@ public class AppTest
         String lastRevisionLog = new LastRevisionLog(TARGET_BRANCH).execute();
         Notifier.notifySuccessfulMerge(SOURCE_BRANCH, TARGET_BRANCH, 38, 45,
             "merged revisions output...", "resolve conflicts output",
-            false, null);
+            true, lastRevisionLog);
     }
 
     public void testCopyPropertiesFile() throws Exception {

@@ -101,7 +101,7 @@ public class Notifier {
                         + "<p><b>Output during CSS conflicts resolution:</b> \n</p>%s\n"
                         + "<p><b>Current merged revisions:</b> \n</p>%s",
                     sourceBranch, targetBranch, fromRevision, toRevision,
-                    StringUtils.isNotBlank(lastRevisionLog) ? lastRevisionLog : StringUtils.EMPTY,
+                    StringUtils.isNotBlank(lastRevisionLog) ? lastRevisionLog : "No file has been committed.",
                     StringUtils.isNotBlank(resolveConflictOutput) ? resolveConflictOutput : "n/a",
                     mergedRevisions
                 )
