@@ -32,7 +32,7 @@ public class App
      * URL to a Team Drive document published in the web (publicly available) which define branches
      * to be merged.
      */
-    public static final String BRANCHES_URL = "<document URL here>";
+    public static final String BRANCHES_URL = PropertiesUtil.getString("branches.doc.url");
 
     public static void main( String[] args ) throws Exception {
         Merger merger = new Merger();

@@ -84,6 +84,7 @@
     <appserver.dir>/home/leonardo/wildfly-11.0.0.Final</appserver.dir>
     <script.setup.path>/home/lpavone/Automerger/scripts/setup</script.setup.path>
     <email.template.path>/home/lpavone/mail.tpl</email.template.path>
+    <branches.doc.url>aaa</branches.doc.url>
   </properties>
 
   <dependencies>
