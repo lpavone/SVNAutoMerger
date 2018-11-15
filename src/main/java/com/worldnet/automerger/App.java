@@ -12,6 +12,10 @@
 package com.worldnet.automerger;
 
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,12 +28,19 @@ public class App
 {
     static final Logger logger = LogManager.getLogger();
 
-    public static void main( String[] args ){
-        Merger merger = new Merger();
-        String[] branches = StringUtils.split(
-            PropertiesUtil.getString("branches.map"), ";");
+    /**
+     * URL to a Team Drive document published in the web (publicly available) which define branches
+     * to be merged.
+     */
+    public static final String BRANCHES_URL =
+        "https://docs.google.com/spreadsheets/d/e/2PACX-1vTJdLwb5zPN2Tc4LB1eizi0KXKe-5LjkLWxfepyiCa_4zzl42n9Am-PUcA5vKF2GmboZrmrI2t3sDGs/pub?output=csv";
 
-        for (int i = 0; i < branches.length; i++) {
+    public static void main( String[] args ) throws Exception {
+        Merger merger = new Merger();
+        String[] branches = readBranches().split(System.getProperty("line.separator"));
+
+        //skip first line in the iteration
+        for (int i = 1; i < branches.length; i++) {
             String[] mergeArgs = StringUtils.split(branches[i], ",");
             if(mergeArgs.length != 3){
                 logger.error("Incorrect branches configuration: {}", branches[i]);
@@ -44,4 +55,24 @@ public class App
         }
         System.exit(0);
     }
+
+    /**
+     * Read the branches configuration to execute the automerger.
+     * The document location is "Team Drive > Development > Projects > Automerger > Branches"
+     * @return the branches configuration
+     */
+    public static String readBranches() throws Exception{
+        URL url = new URL(App.BRANCHES_URL);
+        URLConnection uc = url.openConnection();
+        BufferedReader in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
+        String inputLine;
+        StringBuilder sb = new StringBuilder();
+        while ((inputLine = in.readLine()) != null) {
+            sb.append(inputLine);
+            sb.append("\n");
+        }
+        in.close();
+        return sb.toString();
+    }
+
 }

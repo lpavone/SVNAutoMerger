@@ -12,18 +12,13 @@ import com.worldnet.automerger.commands.StatusCheck;
 import com.worldnet.automerger.commands.UpdateBranch;
 import com.worldnet.automerger.notification.Notifier;
 import java.io.IOException;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 
 /**
  * Unit test for simple App.
  */
-public class AppTest 
-    extends TestCase
-{
+public class AppTest {
 
     private static String SOURCE_BRANCH = "VERSION_6_0_0_0";
     private static String TARGET_BRANCH = "VERSION_5_2_0_0";
@@ -33,71 +28,46 @@ public class AppTest
     private int fromRev;
     private int toRev;
 
-    /**
-     * Create the test case
-     *
-     * @param testName name of the test case
-     */
-    public AppTest( String testName )
-    {
-        super( testName );
-    }
-
-    /**
-     * @return the suite of tests being tested
-     */
-    public static Test suite()
-    {
-        return new TestSuite( AppTest.class );
-    }
-
-    public void testCheckout() {
+    public void checkout() {
         CheckoutBranch cmd = new CheckoutBranch(SOURCE_BRANCH);
         cmd.execute();
-        assertTrue( cmd.wasSuccessful());
     }
 
-    public void testUpdate() {
+    public void update() {
         UpdateBranch cmd = new UpdateBranch(SOURCE_BRANCH);
         cmd.execute();
-        assertTrue( cmd.wasSuccessful());
+
     }
 
-    public void testRevert() {
+    public void revert() {
         RevertChanges cmd = new RevertChanges(TARGET_BRANCH);
         cmd.execute();
-        assertTrue( cmd.wasSuccessful());
     }
 
-    public void testMergeInfo() {
+    public void mergeInfo() {
         MergeInfoRevisions cmdElig = new MergeInfoRevisions(SOURCE_BRANCH, TARGET_BRANCH,
             SvnOperationsEnum.MERGEINFO_ELIGIBLE);
         cmdElig.execute();
         MergeInfoRevisions cmdMerged = new MergeInfoRevisions(SOURCE_BRANCH, TARGET_BRANCH,
             SvnOperationsEnum.MERGEINFO_MERGED);
         cmdMerged.execute();
-        assertTrue(cmdElig.wasSuccessful() && cmdMerged.wasSuccessful());
     }
 
-    public void testCheckoutOrUpdateTargetBranch() throws Exception {
+    public void checkoutOrUpdateTargetBranch() throws Exception {
         merger.checkoutOrUpdateBranch(TARGET_BRANCH);
-        assertTrue( true);//ok if no exception
     }
 
-    public void testMerge() {
+    public void merge() {
         setRevisionsRange();
         Merge cmd = new Merge(SOURCE_BRANCH, TARGET_BRANCH, fromRev, toRev);
-        assertTrue( cmd.wasSuccessful());
     }
 
-    public void testCommitMessageFileCreation() throws IOException {
+    public void commitMessageFileCreation() throws IOException {
         merger.createCommitMessageFile(COMMIT_MSG_FILE_PATH, SOURCE_BRANCH, TARGET_BRANCH, 12045, 12099, "9999");
-        assertTrue( true);//ok if no exception
     }
 
-    public void testCommit(){
+    public void commit(){
         Commit cmd = new Commit(TARGET_BRANCH, COMMIT_MSG_FILE_PATH);
-        assertTrue( cmd.wasSuccessful());
     }
 
     private void setRevisionsRange(){
@@ -112,12 +82,11 @@ public class AppTest
         }
     }
 
-    public void testBuild(){
+    public void build(){
         BuildCheck cmd = new BuildCheck(TARGET_BRANCH);
-        assertTrue( cmd.wasSuccessful());
     }
 
-    public void testEmailNotification(){
+    public void emailNotification(){
 //        Notifier.notifyCommitFailure(SOURCE_BRANCH, TARGET_BRANCH, 23, 30,
 //            "commit output...");
 //        Notifier.notifyFailedBuild(SOURCE_BRANCH, TARGET_BRANCH, 38, 45,
@@ -132,23 +101,21 @@ public class AppTest
             true, lastRevisionLog);
     }
 
-    public void testCopyPropertiesFile() throws Exception {
+    public void copyPropertiesFile() throws Exception {
         merger.createLocalConfigFile(TARGET_BRANCH);
-        assertTrue( true);//ok if no exception
     }
 
-    public void testConflictsResolver(){
+    public void conflictsResolver(){
         ConflictSolver cmd = new ConflictSolver(TARGET_BRANCH);
         cmd.execute();
         StatusCheck stCmd = new StatusCheck(TARGET_BRANCH);
         stCmd.execute();
-        assertTrue( stCmd.wasSuccessful());
     }
 
     /**
      * Main test case, will try to perform a merge and commit the changes.
      */
-    public void testFullMergeProcess() throws Exception {
+    public void fullMergeProcess() throws Exception {
         merger.performMerge(SOURCE_BRANCH, TARGET_BRANCH, "9999");
     }
 

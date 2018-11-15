@@ -71,10 +71,6 @@
     <svn.enable.password.auth>false</svn.enable.password.auth>
     <svn.username>xxxxxxx</svn.username>
     <svn.password>xxxxxx</svn.password>
-    <!-- Branches configuration: the value must a comma separated String indicating source branch, target branch,
-    and the Redmine task number where the changes will be committed.
-      i.e.: VERSION_4_4_0_0,VERSION_4_5_0_0,9999 -->
-    <branches.map>VERSION_5_1_0_2,VERSION_5_2_0_0,10220</branches.map>
     <email.sender>dev@XXXX.com</email.sender>
     <email.to.notify>XXX@XXXX.com</email.to.notify>
     <!-- Enable/disable commit feature: false will not commit changes -->

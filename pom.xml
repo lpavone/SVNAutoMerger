@@ -62,21 +62,17 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Directory used to checkout the branches and store merge result. -->
-    <temp.folder>/home/leonardo/temp</temp.folder>
+    <temp.folder>/tmp</temp.folder>
     <tmp.commit.message.file>/home/leonardo/temp/commit_msg</tmp.commit.message.file>
     <!-- Base path of remote SVN repository. -->
-    <base.repository.path>xxxxx</base.repository.path>
+    <base.repository.path>xxxxxxxxx</base.repository.path>
     <!--true: enforce SVN authentication using username and password for any SVN operation.
         false: a public key authentication will be used. -->
     <svn.enable.password.auth>false</svn.enable.password.auth>
     <svn.username>xxxxxxx</svn.username>
     <svn.password>xxxxxx</svn.password>
-    <!-- Branches configuration: the value must a comma separated String indicating source branch, target branch,
-    and the Redmine task number where the changes will be committed.
-      i.e.: VERSION_4_4_0_0,VERSION_4_5_0_0,9999 -->
-    <branches.map>VERSION_4_5_0_0,VERSION_4_6_0_0,10220</branches.map>
-    <email.sender>xxxxx</email.sender>
-    <email.to.notify>xxxx</email.to.notify>
+    <email.sender>dev@XXXX.com</email.sender>
+    <email.to.notify>XXX@XXXX.com</email.to.notify>
     <!-- Enable/disable commit feature: false will not commit changes -->
     <enable.commit.mode>false</enable.commit.mode>
     <commit.message.template>
@@ -87,6 +83,7 @@
     <!-- Application server modules are necessary for build -->
     <appserver.dir>/home/leonardo/wildfly-11.0.0.Final</appserver.dir>
     <script.setup.path>/home/lpavone/Automerger/scripts/setup</script.setup.path>
+    <email.template.path>/home/lpavone/mail.tpl</email.template.path>
   </properties>
 
   <dependencies>
