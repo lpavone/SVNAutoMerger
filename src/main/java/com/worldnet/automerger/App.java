@@ -32,8 +32,7 @@ public class App
      * URL to a Team Drive document published in the web (publicly available) which define branches
      * to be merged.
      */
-    public static final String BRANCHES_URL =
-        "https://docs.google.com/spreadsheets/d/e/2PACX-1vTJdLwb5zPN2Tc4LB1eizi0KXKe-5LjkLWxfepyiCa_4zzl42n9Am-PUcA5vKF2GmboZrmrI2t3sDGs/pub?output=csv";
+    public static final String BRANCHES_URL = "<document URL here>";
 
     public static void main( String[] args ) throws Exception {
         Merger merger = new Merger();
