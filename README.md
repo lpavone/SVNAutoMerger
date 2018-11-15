@@ -66,15 +66,9 @@ if( is commit mode enabled){
 
 ## Branches configuration
 
-**branches.map** property must be configured in **pom.xml** or directly in already generated **config.properties** file (${project.build.outputDirectory}/config.properties).
-
-The value must a comma separated String indicating source branch, target branch, and the Redmine task number where the changes will be committed.
+Branches to be merged are being read from a document with CSV format stored in Team Drive.
+The values must a comma separated String indicating source branch, target branch, and the Redmine task number where the changes will be committed.
 
 i.e.: VERSION_4_4_0_0,VERSION_4_5_0_0,9999
 
-This means branch name VERSION_4_4_0_0 will be merged into VERSION_4_5_0_0 and the changes will be commited into Redmine task #9999.
-
-If more than one branch need to be added just separate with ";" and add another entry:
-
-VERSION_4_4_0_0,VERSION_4_5_0_0,9999;VERSION_4_4_0_1,VERSION_4_5_0_0,9999
-
+Multiple lines in the document will trigger multiple merges.
