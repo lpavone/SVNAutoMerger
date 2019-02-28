@@ -150,4 +150,14 @@ public class Notifier {
         sendEmail(subject, body);
     }
 
+    public static void notifyGeneralError(String sourceBranch, String targetBranch) {
+        String subject = String
+            .format("[AUTO-MERGER] Error during merge (%s -> %s)", sourceBranch, targetBranch);
+        String body = String.format(
+            "<p>Error trying to merge branch <mark>%s</mark> into <mark>%s</mark>\n"+
+                "Please check logs in the server.",
+            sourceBranch, targetBranch);
+        sendEmail(subject, body);
+    }
+
 }

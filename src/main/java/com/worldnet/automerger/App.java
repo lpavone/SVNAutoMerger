@@ -12,6 +12,8 @@
 package com.worldnet.automerger;
 
 
+import com.worldnet.automerger.notification.Notifier;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -50,6 +52,7 @@ public class App
                 merger.performMerge(mergeArgs[0].trim(), mergeArgs[1].trim(), mergeArgs[2].trim());
             } catch (Exception e) {
                 logger.error(e);
+                Notifier.notifyGeneralError(mergeArgs[0].trim(), mergeArgs[1].trim());
             }
         }
         System.exit(0);
