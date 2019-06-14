@@ -10,10 +10,13 @@
  * and exclusive property of Worldnet TPS Ltd.
  */
 
-package com.worldnet.automerger.commands;
+package com.worldnet.automerger.commands.merge;
 
 import com.worldnet.automerger.SvnOperationsEnum;
 import com.worldnet.automerger.SvnUtils;
+import com.worldnet.automerger.commands.Command;
+import com.worldnet.automerger.commands.CommandExecutor;
+
 import org.apache.commons.lang3.StringUtils;
 
 /**

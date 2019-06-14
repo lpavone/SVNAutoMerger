@@ -10,30 +10,38 @@
  * and exclusive property of Worldnet TPS Ltd.
  */
 
-package com.worldnet.automerger.commands;
+package com.worldnet.automerger.commands.merge;
 
-import com.worldnet.automerger.SvnOperationsEnum;
 import com.worldnet.automerger.SvnUtils;
+import com.worldnet.automerger.commands.Command;
+import com.worldnet.automerger.commands.CommandExecutor;
+
+import org.apache.commons.lang3.StringUtils;
 
 /**
- * Revert changes in a working copy.
+ * Run compilation task to verify build status.
  *
  * @author Leonardo Pavone - 26/07/17.
  */
-public class RevertChanges extends Command {
+public class BuildCheck extends Command {
 
+  private static final String COMPILE_TASK = "ant compile";
   private String branchName;
 
-  public RevertChanges(String branchName) {
+  public BuildCheck(String branchName) {
     this.branchName = branchName;
   }
 
   @Override
   public String execute() {
-      StringBuilder command = new StringBuilder( SvnOperationsEnum.REVERT.command())
-          .append( SvnUtils.createSvnCredentials());
-
-      return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER + "/" + branchName);
+    output = CommandExecutor.run(COMPILE_TASK,
+        SvnUtils.TEMP_FOLDER + "/" + branchName);
+    return output;
   }
 
+  @Override
+  public boolean wasSuccessful() {
+    return StringUtils.contains(output,"BUILD SUCCESSFUL") &&
+        !StringUtils.contains(output,"BUILD FAILED");
+  }
 }

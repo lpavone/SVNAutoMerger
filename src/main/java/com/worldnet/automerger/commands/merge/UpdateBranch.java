@@ -10,41 +10,41 @@
  * and exclusive property of Worldnet TPS Ltd.
  */
 
-package com.worldnet.automerger.commands;
+package com.worldnet.automerger.commands.merge;
 
 import com.worldnet.automerger.SvnOperationsEnum;
 import com.worldnet.automerger.SvnUtils;
+import com.worldnet.automerger.commands.Command;
+import com.worldnet.automerger.commands.CommandExecutor;
+
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Commit changes to repository.
- *
+ * Update a local branch with latest changes from repository.
+ * 
  * @author Leonardo Pavone - 26/07/17.
  */
-public class Commit extends Command {
+public class UpdateBranch extends Command {
 
   private String branchName;
-  private String commitMessageFilePath;
 
-  public Commit(String branchName, String commitMessageFilePath) {
+  public UpdateBranch(String branchName) {
     this.branchName = branchName;
-    this.commitMessageFilePath = commitMessageFilePath;
   }
 
   @Override
   public String execute() {
-    StringBuilder command = new StringBuilder(
-        String.format( SvnOperationsEnum.COMMIT.command(), commitMessageFilePath))
-        .append( SvnUtils.createSvnCredentials());
+      StringBuilder command = new StringBuilder( SvnOperationsEnum.UPDATE.command())
+          .append( SvnUtils.createSvnCredentials());
 
-    output = CommandExecutor.run(command.toString(),
-        SvnUtils.TEMP_FOLDER + "/" + branchName);
-    return output;
+      output = CommandExecutor.run(command.toString(),
+          SvnUtils.TEMP_FOLDER + "/" + branchName);
+      return output;
   }
 
   @Override
   public boolean wasSuccessful() {
-    return StringUtils.contains(output, SvnUtils.COMMITTED_REVISION)
+    return StringUtils.contains(output, SvnUtils.REVISION)
         && !StringUtils.contains(output, SvnUtils.SVN_ERROR_PREFIX);
   }
 }

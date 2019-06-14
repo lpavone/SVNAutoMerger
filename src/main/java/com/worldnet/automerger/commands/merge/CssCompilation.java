@@ -10,35 +10,39 @@
  * and exclusive property of Worldnet TPS Ltd.
  */
 
-package com.worldnet.automerger.commands;
+package com.worldnet.automerger.commands.merge;
 
 import com.worldnet.automerger.SvnUtils;
+import com.worldnet.automerger.commands.Command;
+import com.worldnet.automerger.commands.CommandExecutor;
+
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Run compilation task to verify build status.
+ * Compile CSS files.
  *
  * @author Leonardo Pavone - 26/07/17.
  */
-public class BuildCheck extends Command{
+public class CssCompilation extends Command {
 
-  private static final String COMPILE_TASK = "ant compile";
+  private static final String CSS_COMPILER_CMD = "ant styles.compile";
   private String branchName;
 
-  public BuildCheck(String branchName) {
+  public CssCompilation(String branchName) {
     this.branchName = branchName;
   }
 
   @Override
   public String execute() {
-    output = CommandExecutor.run(COMPILE_TASK,
+    output = CommandExecutor.run(
+        CSS_COMPILER_CMD,
         SvnUtils.TEMP_FOLDER + "/" + branchName);
     return output;
   }
 
   @Override
   public boolean wasSuccessful() {
-    return StringUtils.contains(output,"BUILD SUCCESSFUL") &&
-        !StringUtils.contains(output,"BUILD FAILED");
+    return !StringUtils.contains(output,"Compilation failed")
+        && StringUtils.contains(output,"BUILD SUCCESSFUL");
   }
 }

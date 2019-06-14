@@ -10,38 +10,43 @@
  * and exclusive property of Worldnet TPS Ltd.
  */
 
-package com.worldnet.automerger.commands;
+package com.worldnet.automerger.commands.merge;
 
+import com.worldnet.automerger.PropertiesUtil;
 import com.worldnet.automerger.SvnOperationsEnum;
 import com.worldnet.automerger.SvnUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.worldnet.automerger.commands.Command;
+import com.worldnet.automerger.commands.CommandExecutor;
 
 /**
- * Checkout a branch creating a working copy.
+ * Resolve different kind of conflicts after merge.
+ * Only applies to those conflicts we previously agree to resolve automatically.
  *
- * @author Leonardo Pavone - 26/07/17.
+ * @author Leonardo Pavone - 24/07/17.
  */
-public class CheckoutBranch extends Command {
+public class ConflictSolver extends Command {
 
   private String branchName;
 
-  public CheckoutBranch(String branchName) {
+  public ConflictSolver(String branchName) {
     this.branchName = branchName;
   }
 
+  /**
+   * Resolve the precompiled CSS conflicts automatically.
+   *
+   * @return output of the svn resolve command to identify conflicts resolved
+   */
   @Override
   public String execute() {
     StringBuilder command = new StringBuilder(
-        String.format( SvnOperationsEnum.CHECKOUT.command(), SvnUtils.BASE_REPO + branchName))
+        String.format( SvnOperationsEnum.RESOLVE.command(),
+            PropertiesUtil.getString("compiled.css.path")))
         .append( SvnUtils.createSvnCredentials());
 
-    output = CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER);
+    output = CommandExecutor.run(command.toString(),
+        SvnUtils.TEMP_FOLDER + "/" + branchName);
     return output;
   }
 
-  @Override
-  public boolean wasSuccessful() {
-    return StringUtils.contains(output, SvnUtils.CHECKED_OUT)
-        && !StringUtils.contains(output, SvnUtils.SVN_ERROR_PREFIX);
-  }
 }

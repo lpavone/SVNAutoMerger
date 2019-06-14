@@ -12,18 +12,18 @@
 
 package com.worldnet.automerger;
 
-import com.worldnet.automerger.commands.BuildCheck;
-import com.worldnet.automerger.commands.CheckoutBranch;
+import com.worldnet.automerger.commands.merge.BuildCheck;
+import com.worldnet.automerger.commands.merge.CheckoutBranch;
 import com.worldnet.automerger.commands.CommandExecutor;
-import com.worldnet.automerger.commands.Commit;
-import com.worldnet.automerger.commands.ConflictSolver;
-import com.worldnet.automerger.commands.CssCompilation;
-import com.worldnet.automerger.commands.LastRevisionLog;
-import com.worldnet.automerger.commands.Merge;
-import com.worldnet.automerger.commands.MergeInfoRevisions;
-import com.worldnet.automerger.commands.RevertChanges;
-import com.worldnet.automerger.commands.StatusCheck;
-import com.worldnet.automerger.commands.UpdateBranch;
+import com.worldnet.automerger.commands.merge.Commit;
+import com.worldnet.automerger.commands.merge.ConflictSolver;
+import com.worldnet.automerger.commands.merge.CssCompilation;
+import com.worldnet.automerger.commands.merge.LastRevisionLog;
+import com.worldnet.automerger.commands.merge.Merge;
+import com.worldnet.automerger.commands.merge.MergeInfoRevisions;
+import com.worldnet.automerger.commands.merge.RevertChanges;
+import com.worldnet.automerger.commands.merge.StatusCheck;
+import com.worldnet.automerger.commands.merge.UpdateBranch;
 import com.worldnet.automerger.notification.Notifier;
 import java.io.File;
 import java.io.IOException;

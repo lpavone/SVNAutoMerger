@@ -21,17 +21,25 @@ public abstract class Command {
   protected String output;
 
   /**
-   * Excute a command.
+   * Execute a command.
    * @return command's output
    */
   public abstract String execute();
 
   /**
-   *
+   * Returns if a command was successful or not. If the command to implement does not need to check
+   * result there is no need to override this method, it returns true by default.
    * @return true if command was successfully executed, false otherwise
    */
   public boolean wasSuccessful(){
     return true;
+  }
+
+  /**
+   * Returns output of the command execution.
+   */
+  public String getOutput(){
+    return output;
   }
 
 }

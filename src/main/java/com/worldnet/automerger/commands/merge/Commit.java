@@ -10,36 +10,34 @@
  * and exclusive property of Worldnet TPS Ltd.
  */
 
-package com.worldnet.automerger.commands;
+package com.worldnet.automerger.commands.merge;
 
-import com.worldnet.automerger.PropertiesUtil;
 import com.worldnet.automerger.SvnOperationsEnum;
 import com.worldnet.automerger.SvnUtils;
+import com.worldnet.automerger.commands.Command;
+import com.worldnet.automerger.commands.CommandExecutor;
+
+import org.apache.commons.lang3.StringUtils;
 
 /**
- * Resolve different kind of conflicts after merge.
- * Only applies to those conflicts we previously agree to resolve automatically.
+ * Commit changes to repository.
  *
- * @author Leonardo Pavone - 24/07/17.
+ * @author Leonardo Pavone - 26/07/17.
  */
-public class ConflictSolver extends Command{
+public class Commit extends Command {
 
   private String branchName;
+  private String commitMessageFilePath;
 
-  public ConflictSolver(String branchName) {
+  public Commit(String branchName, String commitMessageFilePath) {
     this.branchName = branchName;
+    this.commitMessageFilePath = commitMessageFilePath;
   }
 
-  /**
-   * Resolve the precompiled CSS conflicts automatically.
-   *
-   * @return output of the svn resolve command to identify conflicts resolved
-   */
   @Override
   public String execute() {
     StringBuilder command = new StringBuilder(
-        String.format( SvnOperationsEnum.RESOLVE.command(),
-            PropertiesUtil.getString("compiled.css.path")))
+        String.format( SvnOperationsEnum.COMMIT.command(), commitMessageFilePath))
         .append( SvnUtils.createSvnCredentials());
 
     output = CommandExecutor.run(command.toString(),
@@ -47,4 +45,9 @@ public class ConflictSolver extends Command{
     return output;
   }
 
+  @Override
+  public boolean wasSuccessful() {
+    return StringUtils.contains(output, SvnUtils.COMMITTED_REVISION)
+        && !StringUtils.contains(output, SvnUtils.SVN_ERROR_PREFIX);
+  }
 }

@@ -10,36 +10,41 @@
  * and exclusive property of Worldnet TPS Ltd.
  */
 
-package com.worldnet.automerger.commands;
+package com.worldnet.automerger.commands.merge;
 
 import com.worldnet.automerger.SvnOperationsEnum;
 import com.worldnet.automerger.SvnUtils;
+import com.worldnet.automerger.commands.Command;
+import com.worldnet.automerger.commands.CommandExecutor;
+
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Run SVN status of the working copy to check if there are existing conflicts.
+ * Checkout a branch creating a working copy.
  *
  * @author Leonardo Pavone - 26/07/17.
  */
-public class StatusCheck extends Command {
+public class CheckoutBranch extends Command {
 
   private String branchName;
 
-  public StatusCheck(String branchName) {
+  public CheckoutBranch(String branchName) {
     this.branchName = branchName;
   }
 
   @Override
   public String execute() {
-      output = CommandExecutor.run(
-          SvnOperationsEnum.STATUS.command(),
-          SvnUtils.TEMP_FOLDER + "/" + branchName);
-      return output;
+    StringBuilder command = new StringBuilder(
+        String.format( SvnOperationsEnum.CHECKOUT.command(), SvnUtils.BASE_REPO + branchName))
+        .append( SvnUtils.createSvnCredentials());
+
+    output = CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER);
+    return output;
   }
 
   @Override
   public boolean wasSuccessful() {
-    return !StringUtils.contains(output, SvnUtils.SVN_ERROR_PREFIX)
-        && !StringUtils.contains(output, SvnUtils.SVN_CONFLICTS);
+    return StringUtils.contains(output, SvnUtils.CHECKED_OUT)
+        && !StringUtils.contains(output, SvnUtils.SVN_ERROR_PREFIX);
   }
 }

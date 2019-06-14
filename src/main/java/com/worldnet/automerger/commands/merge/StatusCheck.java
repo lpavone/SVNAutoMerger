@@ -10,36 +10,39 @@
  * and exclusive property of Worldnet TPS Ltd.
  */
 
-package com.worldnet.automerger.commands;
+package com.worldnet.automerger.commands.merge;
 
+import com.worldnet.automerger.SvnOperationsEnum;
 import com.worldnet.automerger.SvnUtils;
+import com.worldnet.automerger.commands.Command;
+import com.worldnet.automerger.commands.CommandExecutor;
+
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * Compile CSS files.
+ * Run SVN status of the working copy to check if there are existing conflicts.
  *
  * @author Leonardo Pavone - 26/07/17.
  */
-public class CssCompilation extends Command{
+public class StatusCheck extends Command {
 
-  private static final String CSS_COMPILER_CMD = "ant styles.compile";
   private String branchName;
 
-  public CssCompilation(String branchName) {
+  public StatusCheck(String branchName) {
     this.branchName = branchName;
   }
 
   @Override
   public String execute() {
-    output = CommandExecutor.run(
-        CSS_COMPILER_CMD,
-        SvnUtils.TEMP_FOLDER + "/" + branchName);
-    return output;
+      output = CommandExecutor.run(
+          SvnOperationsEnum.STATUS.command(),
+          SvnUtils.TEMP_FOLDER + "/" + branchName);
+      return output;
   }
 
   @Override
   public boolean wasSuccessful() {
-    return !StringUtils.contains(output,"Compilation failed")
-        && StringUtils.contains(output,"BUILD SUCCESSFUL");
+    return !StringUtils.contains(output, SvnUtils.SVN_ERROR_PREFIX)
+        && !StringUtils.contains(output, SvnUtils.SVN_CONFLICTS);
   }
 }

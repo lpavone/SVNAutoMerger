@@ -18,6 +18,9 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -35,24 +38,40 @@ public class App
      * to be merged.
      */
     public static final String BRANCHES_URL = PropertiesUtil.getString("branches.doc.url");
+    private static final String ONLY_DISTRIBUTION = "--only-distribution";
 
     public static void main( String[] args ) throws Exception {
-        Merger merger = new Merger();
         String[] branches = readBranches().split(System.getProperty("line.separator"));
+        //if "only-distribution" argument is passed it only creates dist file, merges are not fired
+        boolean isRunningOnlyDistributionMode = ArrayUtils.isNotEmpty(args) &&
+            BooleanUtils.toBoolean(ONLY_DISTRIBUTION.equals(args[0].trim()));
 
         //skip first line in the iteration
         for (int i = 1; i < branches.length; i++) {
-            String[] mergeArgs = StringUtils.split(branches[i], ",");
-            if(mergeArgs.length != 3){
+            String[] spreadsheetArgs = StringUtils.split(branches[i], ",");
+            if(spreadsheetArgs.length != 5){
                 logger.error("Incorrect branches configuration: {}", branches[i]);
-                logger.error("A valid entry must be: <SOURCE_BRANCH>,<TARGET_BRANCH>,<REDMINE_TICKET>");
+                logger.error("A valid entry must be: <SOURCE_BRANCH>,<TARGET_BRANCH>,<REDMINE_TICKET>,"
+                    + "<CREATE_DISTRIBUTION>,<IS_MERGE_ACTIVE>");
                 System.exit(0);
             }
             try {
-                merger.performMerge(mergeArgs[0].trim(), mergeArgs[1].trim(), mergeArgs[2].trim());
+                String sourceBranch = spreadsheetArgs[0].trim();
+                String targetBranch = spreadsheetArgs[1].trim();
+                String redmineId = spreadsheetArgs[2].trim();
+                boolean isCreateDistributionEnabled = BooleanUtils.toBoolean(spreadsheetArgs[3].trim());
+                boolean isMergeActive = BooleanUtils.toBoolean(spreadsheetArgs[4].trim());
+
+                if (isMergeActive && !isRunningOnlyDistributionMode) {
+                    new Merger().performMerge(sourceBranch, targetBranch, redmineId);
+                }
+                //create distribution file
+                if (isCreateDistributionEnabled){
+                    new DistributionCreator().createDistribution(sourceBranch, targetBranch);
+                }
             } catch (Exception e) {
                 logger.error(e);
-                Notifier.notifyGeneralError(mergeArgs[0].trim(), mergeArgs[1].trim());
+                Notifier.notifyGeneralError(spreadsheetArgs[0].trim(), spreadsheetArgs[1].trim());
             }
         }
         System.exit(0);

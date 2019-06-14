@@ -10,38 +10,32 @@
  * and exclusive property of Worldnet TPS Ltd.
  */
 
-package com.worldnet.automerger.commands;
+package com.worldnet.automerger.commands.merge;
 
 import com.worldnet.automerger.SvnOperationsEnum;
 import com.worldnet.automerger.SvnUtils;
-import org.apache.commons.lang3.StringUtils;
+import com.worldnet.automerger.commands.Command;
+import com.worldnet.automerger.commands.CommandExecutor;
 
 /**
- * Update a local branch with latest changes from repository.
- * 
+ * Revert changes in a working copy.
+ *
  * @author Leonardo Pavone - 26/07/17.
  */
-public class UpdateBranch extends Command {
+public class RevertChanges extends Command {
 
   private String branchName;
 
-  public UpdateBranch(String branchName) {
+  public RevertChanges(String branchName) {
     this.branchName = branchName;
   }
 
   @Override
   public String execute() {
-      StringBuilder command = new StringBuilder( SvnOperationsEnum.UPDATE.command())
+      StringBuilder command = new StringBuilder( SvnOperationsEnum.REVERT.command())
           .append( SvnUtils.createSvnCredentials());
 
-      output = CommandExecutor.run(command.toString(),
-          SvnUtils.TEMP_FOLDER + "/" + branchName);
-      return output;
+      return CommandExecutor.run(command.toString(), SvnUtils.TEMP_FOLDER + "/" + branchName);
   }
 
-  @Override
-  public boolean wasSuccessful() {
-    return StringUtils.contains(output, SvnUtils.REVISION)
-        && !StringUtils.contains(output, SvnUtils.SVN_ERROR_PREFIX);
-  }
 }

@@ -160,4 +160,23 @@ public class Notifier {
         sendEmail(subject, body);
     }
 
+    public static void notifyDistributionFail(String branch) {
+        String subject = String
+            .format("[AUTO-MERGER] Error creating distribution file for version %s", branch);
+        String body = String.format(
+            "<p>Error trying to create dist file for branch <mark>%s</mark>\n"+
+                "File has not been sent, please check logs in the server.",
+            branch);
+        sendEmail(subject, body);
+    }
+
+    public static void notifyDistributionCopyFail(String branch) {
+        String subject = String
+            .format("[AUTO-MERGER] Error copying distribution file of %s to remote server", branch);
+        String body = String.format(
+            "<p>Error trying to create remote directory or copying the file for branch <mark>%s</mark>\n"+
+                "It could be related to SSH access, please check logs in the server.",
+            branch);
+        sendEmail(subject, body);
+    }
 }
