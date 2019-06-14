@@ -81,7 +81,6 @@ public class CopyDistributionFile extends Command {
 
     @Override
     public boolean wasSuccessful() {
-        return StringUtils.isNotBlank(output) &&
-               StringUtils.contains(output,"100%");
+        return StringUtils.isBlank(output);
     }
 }
