@@ -33,7 +33,7 @@ public class VerifyDistribution extends Command {
 
     private static final String EMAIL_TMPL_CMD = "sendmail -t < %s";
     private static final String EMAIL_TMPL_CONTENT =
-        "From: Dev Team <%s>\nTo: %s\nSubject: %s\nContent-Type: text/html\n\n%s";
+        "From: Dev Team <%s>\nTo: %s\nSubject: %s\nContent-Type: text\n\n%s";
     private static final String EMAIL_SUBJECT = "%s dist for verification";
     private static final String EMAIL_BODY =
           "from=%s\n"
@@ -73,7 +73,7 @@ public class VerifyDistribution extends Command {
             );
 
             String mailContentFilePath = PropertiesUtil.getString("temp.folder")
-                + "/verificatione-email.txt";
+                + "/verification-email.txt";
             //write down mail content to FS to be picked by sendmail command
             Files.write(Paths.get(mailContentFilePath), msgContent.getBytes());
 

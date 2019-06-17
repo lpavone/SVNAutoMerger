@@ -73,6 +73,7 @@
     <svn.password>xxxxxx</svn.password>
     <email.sender>dev@XXXX.com</email.sender>
     <email.to.notify>XXX@XXXX.com</email.to.notify>
+    <email.sysadmins></email.sysadmins>
     <!-- Enable/disable commit feature: false will not commit changes -->
     <enable.commit.mode>false</enable.commit.mode>
     <commit.message.template>
@@ -84,6 +85,17 @@
     <appserver.dir>/home/leonardo/wildfly-11.0.0.Final</appserver.dir>
     <script.setup.path>/home/lpavone/Automerger/scripts/setup</script.setup.path>
     <email.template.path>/home/lpavone/mail.tpl</email.template.path>
+    <branches.doc.url>***</branches.doc.url>
+    <!-- Relative path of the distribution file in Automerger box-->
+    <distribution.file.local.path>***</distribution.file.local.path>
+    <!--Base path of the remote location to copy the file (Pydio server)-->
+    <distribution.file.remote.path>*****</distribution.file.remote.path>
+    <!--SHH login used to authenticate to Pydio server-->
+    <pydio.login>*****</pydio.login>
+    <!--Path to private key used for SSH authentication-->
+    <pydio.key>*****</pydio.key>
+    <!--Pydio server IP address-->
+    <pydio.host>*****</pydio.host>
   </properties>
 
   <dependencies>

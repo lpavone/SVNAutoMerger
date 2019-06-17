@@ -74,6 +74,7 @@
     <svn.password>xxxxxx</svn.password>
     <email.sender>dev@XXXX.com</email.sender>
     <email.to.notify>XXX@XXXX.com</email.to.notify>
+    <email.sysadmins></email.sysadmins>
     <!-- Enable/disable commit feature: false will not commit changes -->
     <enable.commit.mode>false</enable.commit.mode>
     <commit.message.template>
@@ -85,7 +86,7 @@
     <appserver.dir>/home/leonardo/wildfly-11.0.0.Final</appserver.dir>
     <script.setup.path>/home/lpavone/Automerger/scripts/setup</script.setup.path>
     <email.template.path>/home/lpavone/mail.tpl</email.template.path>
-    <branches.doc.url>https://docs.google.com/sprea************?gid=0&amp;single=true&amp;output=csv</branches.doc.url>
+    <branches.doc.url>https://docs.google.com/spreadsheets/d/e/2PACX-1vTJdLwb5zPN2Tc4LB1eizi0KXKe-5LjkLWxfepyiCa_4zzl42n9Am-PUcA5vKF2GmboZrmrI2t3sDGs/pub?gid=0&amp;single=true&amp;output=csv</branches.doc.url>
     <!-- Relative path of the distribution file in Automerger box-->
     <distribution.file.local.path>***</distribution.file.local.path>
     <!--Base path of the remote location to copy the file (Pydio server)-->
