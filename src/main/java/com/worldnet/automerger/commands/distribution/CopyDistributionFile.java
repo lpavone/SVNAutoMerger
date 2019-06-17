@@ -62,11 +62,11 @@ public class CopyDistributionFile extends Command {
 
         /*
         Result of this path will be something like:
-        /var/pydio/.../VERSION_5_9_1_0
+        /var/pydio/.../5_9_1_0
          */
         StringBuilder distFileRemoteFolder = new StringBuilder(distFileRemotePath)
             .append(distFileRemotePath.endsWith("/") ? "" : "/")
-            .append(branchName);
+            .append(branchName.replace("VERSION_",""));
 
         String copyFileCommand = String.format(COPY_FILE_TPL,
             pydioKey,

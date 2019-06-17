@@ -51,7 +51,7 @@ public class CreateRemoteDirectory extends Command {
          */
         StringBuilder distFileRemoteFolder = new StringBuilder(distFileRemotePath)
             .append(distFileRemotePath.endsWith("/") ? "" : "/")
-            .append(branchName);
+            .append(branchName.replace("VERSION_",""));
 
         String createDirectoryCommand = String.format(CREATE_DIR_TPL,
             pydioLogin,
