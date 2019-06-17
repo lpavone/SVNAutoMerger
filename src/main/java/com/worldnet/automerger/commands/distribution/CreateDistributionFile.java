@@ -25,6 +25,8 @@ import org.apache.commons.lang3.StringUtils;
  */
 public class CreateDistributionFile extends Command {
 
+    private static final String REVERT_LOCAL_CHANGES = "svn revert . -R";
+    private static final String PULL_LATEST_CHANGES = "svn update";
     private static final String CREATE_DIST_TASK = "ant cleanall distribute";
     private String branchName;
 
@@ -34,9 +36,10 @@ public class CreateDistributionFile extends Command {
 
     @Override
     public String execute() {
-      output = CommandExecutor.run(CREATE_DIST_TASK,
-          SvnUtils.TEMP_FOLDER + "/" + branchName);
-      return output;
+        CommandExecutor.run(REVERT_LOCAL_CHANGES, SvnUtils.TEMP_FOLDER + "/" + branchName);
+        CommandExecutor.run(PULL_LATEST_CHANGES, SvnUtils.TEMP_FOLDER + "/" + branchName);
+        output = CommandExecutor.run(CREATE_DIST_TASK, SvnUtils.TEMP_FOLDER + "/" + branchName);
+        return output;
     }
 
     @Override
