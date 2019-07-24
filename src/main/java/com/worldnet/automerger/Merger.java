@@ -13,26 +13,23 @@
 package com.worldnet.automerger;
 
 import com.worldnet.automerger.commands.merge.BuildCheck;
-import com.worldnet.automerger.commands.merge.CheckoutBranch;
-import com.worldnet.automerger.commands.CommandExecutor;
 import com.worldnet.automerger.commands.merge.Commit;
 import com.worldnet.automerger.commands.merge.ConflictSolver;
 import com.worldnet.automerger.commands.merge.CssCompilation;
 import com.worldnet.automerger.commands.merge.LastRevisionLog;
 import com.worldnet.automerger.commands.merge.Merge;
 import com.worldnet.automerger.commands.merge.MergeInfoRevisions;
-import com.worldnet.automerger.commands.merge.RevertChanges;
 import com.worldnet.automerger.commands.merge.StatusCheck;
-import com.worldnet.automerger.commands.merge.UpdateBranch;
 import com.worldnet.automerger.notification.Notifier;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * @author Leonardo Pavone - 11/07/17.
@@ -61,8 +58,8 @@ public class Merger {
             return MergeResult.BRANCH_NOT_FOUND;
         }
 
-        checkoutOrUpdateBranch(sourceBranch);
-        checkoutOrUpdateBranch(targetBranch);
+        SvnUtils.checkoutOrUpdateBranch(sourceBranch);
+        SvnUtils.checkoutOrUpdateBranch(targetBranch);
 
         int fromRevision = getFromRevision(eligibleRevisions);
         int toRevision = getToRevision(eligibleRevisions);
@@ -192,43 +189,6 @@ public class Merger {
         String revision = StringUtils
             .split(eligibleRevisions, System.getProperty("line.separator"))[0];
         return Integer.parseInt(StringUtils.remove(revision, "r"));
-    }
-
-    /**
-     * Checkout the working copy of target branch. If already exits will do: - Revert: to remove any
-     * possible unwanted changes - Update: to update latest changes from repository
-     */
-    public void checkoutOrUpdateBranch(String branchName) throws Exception {
-        boolean branchDirExists = new File(SvnUtils.TEMP_FOLDER + "/" + branchName).exists();
-        if (branchDirExists) {
-            RevertChanges revertChangesCmd = new RevertChanges(branchName);
-            revertChangesCmd.execute();
-            UpdateBranch updateBranchCmd = new UpdateBranch(branchName);
-            updateBranchCmd.execute();
-            if (!updateBranchCmd.wasSuccessful()) {
-                throw new Exception("Error updating working copy");
-            }
-        } else {
-            CheckoutBranch checkoutBranchCmd = new CheckoutBranch(branchName);
-            checkoutBranchCmd.execute();
-            if (!checkoutBranchCmd.wasSuccessful()) {
-                throw new Exception("Error checking out working copy");
-            }
-            createLocalConfigFile(branchName);
-        }
-    }
-
-    /**
-     * Create localconf folder and properties file necessary to run build task in order to check
-     * merge integrity.
-     */
-    public void createLocalConfigFile(String branchName) throws Exception {
-        String branchPath = SvnUtils.TEMP_FOLDER + "/" + branchName;
-        //run script to set up project
-        String scriptSetupPath = PropertiesUtil.getString("script.setup.path");
-        String scriptCommand = String.format("%s %s", scriptSetupPath, branchName);
-        CommandExecutor.run(scriptCommand, branchPath);
-        logger.info("worldnettps.properties file has been created in localconf folder.");
     }
 
 }

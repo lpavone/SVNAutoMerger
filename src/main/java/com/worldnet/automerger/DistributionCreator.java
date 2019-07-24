@@ -39,8 +39,9 @@ public class DistributionCreator {
     protected static final String TEMP_FOLDER =
         PropertiesUtil.getString("temp.folder");
 
-    public void createDistribution(String sourceBranch, String targetBranch){
+    public void createDistribution(String sourceBranch, String targetBranch) throws Exception {
         logger.info("Starting distribution creation for branch: " + targetBranch);
+        SvnUtils.checkoutOrUpdateBranch(targetBranch);
         Command createDistCommand = new CreateDistributionFile(targetBranch);
         createDistCommand.execute();
         if (!createDistCommand.wasSuccessful()){
