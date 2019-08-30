@@ -46,7 +46,7 @@ public class Notifier {
                 emailSubject,
                 body);
 
-            String mailContentFilePath = PropertiesUtil.getString("temp.folder") + "/mail.txt";
+            String mailContentFilePath = PropertiesUtil.getString("email.notification.file");
             //write down mail content to FS to be picked by sendmail command
             Files.write(Paths.get(mailContentFilePath), msgContent.getBytes());
 

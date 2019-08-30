@@ -62,8 +62,11 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Directory used to checkout the branches and store merge result. -->
-    <temp.folder>/tmp</temp.folder>
-    <tmp.commit.message.file>/home/leonardo/temp/commit_msg</tmp.commit.message.file>
+    <temp.folder>/home/lpavone/development/workspace</temp.folder>
+    <!--Temp file to write the commit message-->
+    <tmp.commit.message.file>/home/lpavone/commit_msg</tmp.commit.message.file>
+    <email.notification.file>/home/lpavone/mail.txt</email.notification.file>
+    <email.verification.file>/home/lpavone/verification-email.txt</email.verification.file>
     <!-- Base path of remote SVN repository. -->
     <base.repository.path>xxxxxxxxx</base.repository.path>
     <!--true: enforce SVN authentication using username and password for any SVN operation.

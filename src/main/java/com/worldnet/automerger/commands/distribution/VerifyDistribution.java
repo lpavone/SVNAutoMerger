@@ -72,8 +72,7 @@ public class VerifyDistribution extends Command {
                 String.format(EMAIL_BODY, sourceBranch, distVersionForBody, md5sum)
             );
 
-            String mailContentFilePath = PropertiesUtil.getString("temp.folder")
-                + "/verification-email.txt";
+            String mailContentFilePath = PropertiesUtil.getString("email.verification.file");
             //write down mail content to FS to be picked by sendmail command
             Files.write(Paths.get(mailContentFilePath), msgContent.getBytes());
 
